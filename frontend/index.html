@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo.png?v=2" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>升本词汇 · 专升本英语词汇</title>
+    <meta name="description" content="液态玻璃风格的专升本英语词汇学习网站，支持浏览、闪卡、搜索与收藏。" />
+    <meta name="author" content="升本词汇" />
+    <script>
+      // 首屏前应用主题，避免闪烁（FOUC）。与 SettingsContext 的 theme 逻辑保持一致。
+      (function () {
+        try {
+          var t = localStorage.getItem("liquid-words:theme") || "dark";
+          var dark = t === "dark" || (t === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          var r = document.documentElement;
+          r.classList.toggle("dark", dark);
+          r.style.colorScheme = dark ? "dark" : "light";
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

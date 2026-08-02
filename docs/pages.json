@@ -1,0 +1,62 @@
+[
+  {
+    "pageKey": "Home",
+    "title": "概览",
+    "url": "/"
+  },
+  {
+    "pageKey": "Browse",
+    "title": "浏览",
+    "url": "/browse"
+  },
+  {
+    "pageKey": "BrowsePart",
+    "title": "Part 列表",
+    "url": "/browse/:part"
+  },
+  {
+    "pageKey": "BrowseList",
+    "title": "单词列表",
+    "url": "/browse/:part/:list"
+  },
+  {
+    "pageKey": "Confusables",
+    "title": "近义词辨析",
+    "url": "/confusables"
+  },
+  {
+    "pageKey": "Custom",
+    "title": "自定义词库",
+    "url": "/custom"
+  },
+  {
+    "pageKey": "CustomList",
+    "title": "词库详情",
+    "url": "/custom/:listId"
+  },
+  {
+    "pageKey": "Flashcards",
+    "title": "翻卡学习",
+    "url": "/flashcards/:part/:list"
+  },
+  {
+    "pageKey": "CustomFlashcards",
+    "title": "自定义翻卡",
+    "url": "/flashcards/custom/:listId"
+  },
+  {
+    "pageKey": "Quiz",
+    "title": "听音写词",
+    "url": "/quiz"
+  },
+  {
+    "pageKey": "Search",
+    "title": "搜索",
+    "url": "/search"
+  },
+  {
+    "pageKey": "Starred",
+    "title": "生词本",
+    "url": "/starred"
+  }
+]

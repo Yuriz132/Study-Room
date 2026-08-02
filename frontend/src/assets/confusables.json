@@ -1,0 +1,99 @@
+[
+  {
+    "words": ["affect", "effect"],
+    "distinction": "affect 作动词“影响”（主语多为事物）；effect 多作名词“效果/影响”，作动词时意为“实现、使生效”。记忆：A=Action(动作)→affect 是动词。",
+    "examples": [
+      { "word": "affect", "text": "The weather affected my mood. 天气影响了我的心情。" },
+      { "word": "effect", "text": "The new law had a good effect. 新法律产生了良好效果。" }
+    ]
+  },
+  {
+    "words": ["advice", "advise"],
+    "distinction": "advice 是名词“建议”（不可数）；advise 是动词“建议”。名词以 -ce 结尾，动词以 -se 结尾。",
+    "examples": [
+      { "word": "advice", "text": "Let me give you some advice. 给你些建议。" },
+      { "word": "advise", "text": "I advise you to study hard. 我建议你努力学习。" }
+    ]
+  },
+  {
+    "words": ["beside", "besides"],
+    "distinction": "beside 是介词“在…旁边”；besides 是介词/副词“除…之外（还）”。",
+    "examples": [
+      { "word": "beside", "text": "He sat beside me. 他坐在我旁边。" },
+      { "word": "besides", "text": "Besides English, she speaks French. 除了英语，她还会法语。" }
+    ]
+  },
+  {
+    "words": ["principal", "principle"],
+    "distinction": "principal 指“校长；主要的”（人/重要性）；principle 指“原则、原理”。记忆：principal 含 pal（伙伴/人）→ 与人有关。",
+    "examples": [
+      { "word": "principal", "text": "The principal is strict. 校长很严格。" },
+      { "word": "principle", "text": "He sticks to his principles. 他坚持原则。" }
+    ]
+  },
+  {
+    "words": ["accept", "except"],
+    "distinction": "accept 是动词“接受”；except 是介词“除…之外”。",
+    "examples": [
+      { "word": "accept", "text": "I accept your invitation. 我接受你的邀请。" },
+      { "word": "except", "text": "Everyone came except Tom. 除了汤姆大家都来了。" }
+    ]
+  },
+  {
+    "words": ["rise", "raise", "arise"],
+    "distinction": "rise 不及物“上升”（如太阳、价格）；raise 及物“举起/提高”（需宾语）；arise 不及物“出现、发生”。",
+    "examples": [
+      { "word": "rise", "text": "The sun rises in the east. 太阳从东方升起。" },
+      { "word": "raise", "text": "Please raise your hand. 请举手。" },
+      { "word": "arise", "text": "A problem arose. 出现了一个问题。" }
+    ]
+  },
+  {
+    "words": ["lose", "loose"],
+    "distinction": "lose 是动词“丢失、输掉”；loose 是形容词“松的、宽松的”。",
+    "examples": [
+      { "word": "lose", "text": "Don't lose your key. 别丢了钥匙。" },
+      { "word": "loose", "text": "These shoes are too loose. 这鞋太松了。" }
+    ]
+  },
+  {
+    "words": ["quite", "quiet"],
+    "distinction": "quite 是副词“相当、十分”；quiet 是形容词“安静的”。",
+    "examples": [
+      { "word": "quite", "text": "It's quite cold today. 今天相当冷。" },
+      { "word": "quiet", "text": "Please keep quiet. 请保持安静。" }
+    ]
+  },
+  {
+    "words": ["economic", "economical"],
+    "distinction": "economic 指“经济上的、经济学的”；economical 指“节省的、经济实惠的”。",
+    "examples": [
+      { "word": "economic", "text": "economic growth 经济增长" },
+      { "word": "economical", "text": "an economical car 省油的车" }
+    ]
+  },
+  {
+    "words": ["lie", "lay"],
+    "distinction": "lie（躺/位于）过去式 lay、过去分词 lain；lay（放置/下蛋）过去式 laid、过去分词 laid。两者易混，注意 lie 的过去式正好是 lay。",
+    "examples": [
+      { "word": "lie", "text": "He lay on the bed. 他躺在床上。（lie 的过去式）" },
+      { "word": "lay", "text": "She laid the book down. 她放下书。（lay 的过去式）" }
+    ]
+  },
+  {
+    "words": ["whether", "if"],
+    "distinction": "if 可表“是否”或“如果”；whether 表“是否”更正式，且后接 or not、介词后、不定式前只能用 whether。",
+    "examples": [
+      { "word": "whether", "text": "I don't know whether to go. 我不知道是否要去。" },
+      { "word": "if", "text": "If it rains, we stay. 如果下雨我们就留下。" }
+    ]
+  },
+  {
+    "words": ["alone", "lonely"],
+    "distinction": "alone 指“独自一人”（客观状态）；lonely 指“孤独的、寂寞的”（主观感受）。",
+    "examples": [
+      { "word": "alone", "text": "I live alone. 我一个人住。" },
+      { "word": "lonely", "text": "She felt lonely. 她感到孤独。" }
+    ]
+  }
+]

@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+/* 让 `dark:` 工具类与手动 .dark class 联动（而非仅跟随系统偏好），
+   从而支持「浅色 / 深色 / 跟随系统」三态切换 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-destructive: var(--destructive);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-input: var(--input);
+  --radius: 1rem;
+}
+
+/* ===== 浅色主题（默认）===== */
+:root {
+  --background: oklch(0.98 0.004 265);
+  --foreground: oklch(0.24 0.02 265);
+  --card: oklch(1 0 0 / 0.72);
+  --card-foreground: oklch(0.24 0.02 265);
+  --primary: oklch(0.58 0.17 255);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.94 0.015 265);
+  --secondary-foreground: oklch(0.28 0.02 265);
+  --muted: oklch(0.95 0.01 265 / 0.85);
+  --muted-foreground: oklch(0.5 0.02 265);
+  --accent: oklch(0.93 0.03 265);
+  --border: oklch(0.2 0.02 265 / 0.12);
+  --ring: var(--primary);
+  --success: oklch(0.58 0.15 150);
+  --destructive: oklch(0.56 0.2 25);
+  --popover: oklch(1 0 0 / 0.96);
+  --popover-foreground: oklch(0.24 0.02 265);
+  --input: oklch(0.93 0.01 265);
+
+  /* 玻璃表面语义层（随主题变色）*/
+  --glass-bg: oklch(1 0 0 / 0.66);
+  --glass-bg-soft: oklch(1 0 0 / 0.42);
+  --glass-icon: oklch(1 0 0 / 0.8);
+  --glass-nav: oklch(0.98 0.004 265 / 0.8);
+  --surface: oklch(1 0 0 / 0.9);
+}
+
+/* ===== 深色主题（液态玻璃）===== */
+.dark {
+  --background: oklch(0.14 0.03 265);
+  --foreground: oklch(0.98 0.005 265);
+  --card: oklch(0.2 0.03 265 / 0.7);
+  --card-foreground: oklch(0.98 0.005 265);
+  --primary: oklch(0.7 0.16 250);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.3 0.04 265);
+  --secondary-foreground: oklch(0.98 0.005 265);
+  --muted: oklch(0.28 0.03 265 / 0.6);
+  --muted-foreground: oklch(0.78 0.02 265);
+  --accent: oklch(0.32 0.06 265);
+  --border: oklch(1 0 0 / 0.12);
+  --ring: var(--primary);
+  --success: oklch(0.7 0.16 150);
+  --destructive: oklch(0.62 0.2 25);
+  --popover: oklch(0.2 0.03 265 / 0.96);
+  --popover-foreground: oklch(0.98 0.005 265);
+  --input: oklch(1 0 0 / 0.1);
+
+  --glass-bg: oklch(1 0 0 / 0.04);
+  --glass-bg-soft: oklch(1 0 0 / 0.03);
+  --glass-icon: oklch(1 0 0 / 0.07);
+  --glass-nav: oklch(0.16 0.03 265 / 0.92);
+  --surface: oklch(0.2 0.03 265 / 0.92);
+}
+
+* { border-color: var(--border); }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "HarmonyOS Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(1200px 600px at 10% -10%, color-mix(in oklch, var(--primary) 22%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, color-mix(in oklch, var(--primary) 14%, transparent), transparent 55%);
+  background-attachment: fixed;
+}
+
+@keyframes hvFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.hv-fade { animation: hvFade 0.25s ease both; }
+
+/* 首页每日壁纸：始终为深色柔和渐变，让首页白字在任何主题下都保持高对比可读 */
+.daily-wallpaper { position: absolute; inset: 0; z-index: -1; }
+.daily-wallpaper-dots {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(2px 2px at 20% 30%, rgba(255,255,255,0.18), transparent 50%),
+    radial-gradient(2px 2px at 70% 60%, rgba(255,255,255,0.12), transparent 50%),
+    radial-gradient(2px 2px at 40% 80%, rgba(255,255,255,0.1), transparent 50%);
+  opacity: 0.6;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--primary) 40%, transparent); border-radius: 999px; }
+
+/* 随主题变色的玻璃表面工具类（替换写死的 white/* 半透明）*/
+@layer components {
+  .g-panel { background: var(--glass-bg); }
+  .g-soft { background: var(--glass-bg-soft); }
+  .g-icon { background: var(--glass-icon); }
+  .g-nav { background: var(--glass-nav); }
+  .g-surface { background: var(--surface); }
+  .g-border { border-color: var(--border); }
+  .g-ring { --tw-ring-color: var(--border); }
+}
+
+/* 移动端降低毛玻璃模糊半径，减轻合成开销，保证滚动/路由切换流畅度 */
+@media (max-width: 768px) {
+  .backdrop-blur-xl { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .backdrop-blur-2xl { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .backdrop-blur-lg { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+}
+
+/* 系统级「减少动态效果」无障碍偏好：彻底关闭过渡/动画（framer-motion 已通过 useReducedMotion 同步降级，此处兜底 CSS 动画） */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

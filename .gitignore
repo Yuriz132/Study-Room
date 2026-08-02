@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+dist-*/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache
+.cache/
+.turbo/
+
+# Genie internal
+.codebuddy/
+.genie/
+.cloudstudio
+
+# Local debug scripts & dev backups (not part of the project)
+backups/
+frontend/dbtest.mjs
+frontend/deltest.mjs
+frontend/probe.mjs
+frontend/puttest.mjs
+frontend/.env
+# ── Runtime user data & uploaded media (contain PII — never commit) ──
+backend/data/
+backend/uploads/
+frontend/uploads/
+**/uploads/
+
+# ── Editor / build backups (not part of the project) ──
+*.bak
+*.bak/
+src.bak/

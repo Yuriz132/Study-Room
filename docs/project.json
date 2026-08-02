@@ -1,0 +1,8 @@
+{
+  "project_type": "web",
+  "sub_project_type": "",
+  "name": "升本词汇",
+  "app_slug": "vocab-learning",
+  "version_description": "中文TTS走CloudBase云函数代理",
+  "preview_type": "pc"
+}
