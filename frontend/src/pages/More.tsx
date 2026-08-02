@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Timer, Sparkles, BookOpen, Layers, Volume2, Lock, Bell, Gauge, Trash2, RefreshCcw, Calendar, ChevronRight, Swords, Zap, Sun, Moon, Monitor, Palette, PenTool, UserCircle2, Image as ImageIcon, X, Shield, CheckCircle, XCircle } from "lucide-react";
 import { ANIMATION_PRESETS } from "@/components/MotionPrimitives";
@@ -19,7 +20,6 @@ export default function More() {
     sound, setSound,
     speechRate, setSpeechRate,
     motionEnabled, setMotionEnabled,
-    animationPreset, setAnimationPreset,
     clearAllCache,
   } = useSettings();
   const { user, isAuthed, isAdmin, banUserAvatar } = useAuth();
@@ -68,40 +68,7 @@ export default function More() {
         <SettingCard icon={<Zap className="h-4 w-4 text-amber-300" />} title="界面动效" desc="页面切换、卡片飞入等过渡动画（弱机或系统开启「减少动态效果」时自动关闭以保证流畅）">
           <Switch checked={motionEnabled} onCheckedChange={setMotionEnabled} aria-label="界面动效" />
         </SettingCard>
-        {motionEnabled && (
-          <div className="rounded-2xl border g-border g-panel p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-panel">
-                <Sparkles className="h-4 w-4 text-violet-300" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-foreground">动画风格</div>
-                <p className="text-xs text-muted-foreground">三档预设，对应不同的入场速度、位移和缓动曲线</p>
-              </div>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {(["灵动", "适中", "优雅"] as const).map((p) => {
-                const active = animationPreset === p;
-                const cfg = ANIMATION_PRESETS[p];
-                return (
-                  <button
-                    key={p}
-                    onClick={() => setAnimationPreset(p)}
-                    aria-pressed={active}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border px-3 py-2.5 text-center transition-all active:scale-95 ${
-                      active
-                        ? "border-primary bg-primary/10 text-primary shadow-sm"
-                        : "border g-border text-muted-foreground hover:text-foreground hover:bg-card"
-                    }`}
-                  >
-                    <div className="text-sm font-semibold">{p}</div>
-                    <div className="text-[10px] leading-tight opacity-70">{cfg.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {motionEnabled && <AnimationPresetCard />}
         <SettingCard icon={<Sparkles className="h-4 w-4 text-violet-400" />} title="AI 每日英语谚语" desc="首页显示 AI 生成的英语谚语 + 中文注释（关掉则只显示当日日期）">
           <Switch checked={proverbEnabled} onCheckedChange={setProverbEnabled} aria-label="显示 AI 谚语" />
         </SettingCard>
@@ -309,45 +276,49 @@ function ThemeSwitcher({ value, onChange, className = "" }: { value: Theme; onCh
   );
 }
 
+const SKIN_OPTS: { key: Skin; label: string; desc: string }[] = [
+  { key: "default",   label: "默认",      desc: "跟随系统外观主题" },
+  { key: "handdrawn", label: "手绘风格",   desc: "素描速写 · 纸纹底" },
+  { key: "newspaper", label: "报纸",       desc: "经典报章 · 新闻纸" },
+  { key: "matcha",    label: "薄荷抹茶",   desc: "清新绿调 · 柔光" },
+  { key: "minimal",   label: "极简线条",   desc: "纯粹黑白 · 无装饰" },
+  { key: "crayon",    label: "卡通蜡笔",   desc: "童趣涂鸦 · 波点" },
+  { key: "mengnan",   label: "猛男粉",     desc: "热粉霓虹 · 光晕" },
+];
+
 function SkinCard() {
   const { skin, setSkin } = useSettings();
-  const opts: { key: Skin; label: string }[] = [
-    { key: "default", label: "默认" },
-    { key: "handdrawn", label: "手绘风格" },
-    { key: "newspaper", label: "报纸" },
-    { key: "matcha", label: "薄荷抹茶" },
-    { key: "minimal", label: "极简线条" },
-    { key: "crayon", label: "卡通蜡笔" },
-    { key: "mengnan", label: "猛男粉" },
-  ];
+  const [open, setOpen] = useState(false);
+  const current = SKIN_OPTS.find((o) => o.key === skin) || SKIN_OPTS[0];
+
   return (
-    <div className="mb-2 rounded-2xl border g-border g-panel px-3.5 py-3">
-      <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-icon">
-          <PenTool className="h-4 w-4 text-rose-400" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-foreground">主题风格</div>
-          <div className="mt-0.5 text-xs text-muted-foreground/80">默认 / 手绘 / 报纸 / 薄荷 / 极简 / 卡通蜡笔 / 猛男粉，可叠加在浅色或深色之上</div>
-        </div>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-1 rounded-xl border g-border g-panel p-1">
-        {opts.map((o) => {
-          const active = skin === o.key;
-          return (
-            <button
-              key={o.key}
-              type="button"
-              onClick={() => setSkin(o.key)}
-              aria-pressed={active}
-              className={"flex-1 min-w-[72px] px-2 py-1.5 text-xs font-medium transition-all active:scale-95 " + (active ? "rounded-lg bg-primary text-primary-foreground shadow" : "rounded-lg text-muted-foreground hover:text-foreground")}
-            >
-              {o.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <>
+      <SelectorCard
+        icon={<PenTool className="h-4 w-4 text-rose-400" />}
+        title="主题风格"
+        desc={current.label + " · " + current.desc}
+        onClick={() => setOpen(true)}
+      />
+      {open && (
+        <PopupSheet title="选择主题风格" onClose={() => setOpen(false)}>
+          <div className="flex flex-col gap-1">
+            {SKIN_OPTS.map((o) => (
+              <button
+                key={o.key}
+                onClick={() => { setSkin(o.key); setOpen(false); }}
+                className={"flex items-center justify-between rounded-xl px-4 py-3 text-left transition active:scale-[0.98] " + (skin === o.key ? "bg-primary text-primary-foreground" : "hover:bg-muted/40")}
+              >
+                <div>
+                  <div className="text-sm font-medium">{o.label}</div>
+                  <div className={"mt-0.5 text-xs " + (skin === o.key ? "text-primary-foreground/70" : "text-muted-foreground")}>{o.desc}</div>
+                </div>
+                {skin === o.key && <CheckCircle className="h-4 w-4 shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </PopupSheet>
+      )}
+    </>
   );
 }
 
@@ -436,6 +407,7 @@ function WallpaperCard() {
 
 function FontColorCard() {
   const { fontColor, setFontColor } = useSettings();
+  const [open, setOpen] = useState(false);
   const [swatch, setSwatch] = useState<string>(fontColor || "#ffffff");
   useEffect(() => {
     if (!fontColor) setSwatch("#ffffff");
@@ -445,51 +417,187 @@ function FontColorCard() {
   const PRESETS = ["#ffffff","#e2e8f0","#fbbf24","#f87171","#34d399","#60a5fa","#a78bfa","#f472b6","#000000"];
 
   return (
-    <div className="mb-2 rounded-2xl border g-border g-panel px-3.5 py-3">
-      <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-icon">
-          <Palette className="h-4 w-4 text-amber-400" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-foreground">字体颜色</div>
-          <div className="mt-0.5 text-xs text-muted-foreground/80">点击色块或选取器自定义全站文字</div>
-        </div>
-      </div>
-      <div className="mt-3 space-y-2.5">
-        <div className="flex flex-wrap gap-1.5">
-          {PRESETS.map((c) => (
-            <button
-              key={c}
-              onClick={() => setFontColor(c)}
-              className={`h-7 w-7 rounded-full border-2 transition active:scale-90 ${fontColor === c ? 'border-primary ring-1 ring-primary' : 'border-transparent'}`}
-              style={{ backgroundColor: c }}
-              aria-label={`字体颜色 ${c}`}
-            />
-          ))}
-        </div>
-        <div className="flex items-center gap-3">
-          <input
-            type="color"
-            value={swatch}
-            onChange={(e) => setFontColor(e.target.value)}
-            className="h-10 w-14 shrink-0 cursor-pointer rounded-lg border g-border g-panel"
-            aria-label="选择字体颜色"
-          />
-          <div className="flex-1 truncate text-sm font-semibold" style={fontColor ? { color: fontColor } : undefined}>
-            Aa 预览效果
+    <>
+      <div className="mb-2 rounded-2xl border g-border g-panel px-3.5 py-3">
+        <button
+          onClick={() => setOpen(true)}
+          className="flex w-full items-center gap-2.5 text-left"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-icon">
+            <Palette className="h-4 w-4 text-amber-400" />
           </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium text-foreground">字体颜色</div>
+            <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground/80">
+              {fontColor ? (
+                <>
+                  <span className="inline-block h-4 w-4 rounded-full border border-border" style={{ backgroundColor: fontColor }} />
+                  <span className="font-mono text-[11px]">{fontColor}</span>
+                </>
+              ) : (
+                "跟随主题自动适配"
+              )}
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
+      </div>
+
+      {open && (
+        <PopupSheet title="选择字体颜色" onClose={() => setOpen(false)}>
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => { setFontColor(""); setOpen(false); }}
+                className={"flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm transition active:scale-95 " + (!fontColor ? "bg-primary text-primary-foreground" : "hover:bg-muted/40")}
+              >
+                <div className="h-5 w-5 rounded-full border-2 border-dashed border-current" />
+                默认
+              </button>
+              {PRESETS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => { setFontColor(c); setOpen(false); }}
+                  className={"h-10 w-10 rounded-xl border-2 transition active:scale-90 " + (fontColor === c ? "border-primary ring-1 ring-primary" : "border-transparent")}
+                  style={{ backgroundColor: c }}
+                  aria-label={`字体颜色 ${c}`}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={swatch}
+                onChange={(e) => setFontColor(e.target.value)}
+                className="h-10 w-14 shrink-0 cursor-pointer rounded-lg border g-border g-panel"
+                aria-label="选择字体颜色"
+              />
+              <div className="flex-1 truncate text-sm font-semibold" style={fontColor ? { color: fontColor } : undefined}>
+                Aa 预览效果
+              </div>
+              <button
+                onClick={() => { setFontColor(""); setOpen(false); }}
+                disabled={!fontColor}
+                className="shrink-0 rounded-full g-panel px-3 py-1 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-40"
+              >
+                恢复默认
+              </button>
+            </div>
+            <p className="text-[11px] leading-relaxed text-muted-foreground/60">
+              深色背景建议浅色，浅色背景建议深色
+            </p>
+          </div>
+        </PopupSheet>
+      )}
+    </>
+  );
+}
+
+/* ============================================================
+   共享组件：弹窗选择器
+   ============================================================ */
+
+/** 收起的选项卡片（只显示当前值 + 点击箭头） */
+function SelectorCard({ icon, title, desc, onClick }: {
+  icon: React.ReactNode; title: string; desc: string; onClick: () => void
+}) {
+  return (
+    <div className="mb-2 rounded-2xl border g-border g-panel px-3.5 py-3">
+      <button onClick={onClick} className="flex w-full items-center gap-2.5 text-left">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-icon">{icon}</div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium text-foreground">{title}</div>
+          <div className="mt-0.5 text-xs text-muted-foreground/80 truncate">{desc}</div>
+        </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </button>
+    </div>
+  );
+}
+
+/** 底部弹出面板（仿 iOS Action Sheet，从底部滑入） */
+function PopupSheet({ title, onClose, children }: {
+  title: string; onClose: () => void; children: React.ReactNode
+}) {
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
+      {/* 半透明遮罩 */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      {/* 内容面板 */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-lg animate-[slideUp_0.25s_ease-out] rounded-t-3xl border-t g-border bg-background/98 backdrop-blur-xl p-4 pb-8 shadow-2xl"
+      >
+        {/* 拖动指示器 */}
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-muted-foreground/25" />
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-semibold text-foreground">{title}</h3>
           <button
-            onClick={() => setFontColor("")}
-            disabled={!fontColor}
-            className="shrink-0 rounded-full g-panel px-3 py-1 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-40"
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-full g-icon transition hover:bg-muted"
           >
-            恢复默认
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
         </div>
-        <p className="text-[11px] leading-relaxed text-muted-foreground/60">
-          提示：深色背景建议浅色，浅色背景建议深色
-        </p>
+        {children}
       </div>
-    </div>
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
+    </div>,
+    document.body
+  );
+}
+
+/** 动画预设卡片（收起的） */
+function AnimationPresetCard() {
+  const { animationPreset, setAnimationPreset } = useSettings();
+  const [open, setOpen] = useState(false);
+  const current = ANIMATION_PRESETS[animationPreset];
+
+  return (
+    <>
+      <div className="rounded-2xl border g-border g-panel p-4">
+        <button onClick={() => setOpen(true)} className="flex w-full items-start gap-3 text-left">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-panel">
+            <Sparkles className="h-4 w-4 text-violet-300" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium text-foreground">动画风格</div>
+            <div className="mt-0.5 text-xs text-muted-foreground">
+              {animationPreset} · {current.desc}
+            </div>
+          </div>
+          <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
+      </div>
+
+      {open && (
+        <PopupSheet title="选择动画风格" onClose={() => setOpen(false)}>
+          <div className="flex flex-col gap-1">
+            {(["灵动", "适中", "优雅"] as const).map((p) => {
+              const active = animationPreset === p;
+              const cfg = ANIMATION_PRESETS[p];
+              return (
+                <button
+                  key={p}
+                  onClick={() => { setAnimationPreset(p); setOpen(false); }}
+                  className={"flex items-center justify-between rounded-xl px-4 py-3 text-left transition active:scale-[0.98] " + (active ? "bg-primary text-primary-foreground" : "hover:bg-muted/40")}
+                >
+                  <div>
+                    <div className="text-sm font-medium">{p}</div>
+                    <div className={"mt-0.5 text-xs " + (active ? "text-primary-foreground/70" : "text-muted-foreground")}>{cfg.desc}</div>
+                  </div>
+                  {active && <CheckCircle className="h-4 w-4 shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+        </PopupSheet>
+      )}
+    </>
   );
 }
