@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { type AnimationPreset } from "@/components/MotionPrimitives";
 
 const KEYS = {
   pomodoroVisible: "liquid-words:pomodoro-visible",
@@ -10,9 +11,7 @@ const KEYS = {
   sound: "liquid-words:sound",
   speechRate: "liquid-words:speech-rate",
   motionEnabled: "liquid-words:motion-enabled",
-  staggerInterval: "liquid-words:stagger-interval",
-  staggerDistance: "liquid-words:stagger-distance",
-  staggerEase: "liquid-words:stagger-ease",
+  animationPreset: "liquid-words:animation-preset",
   theme: "liquid-words:theme",
   wallpaper: "liquid-words:wallpaper",
   fontColor: "liquid-words:fontColor",
@@ -124,12 +123,8 @@ interface SettingsValue {
   sound: boolean; setSound: (v: boolean) => void;
   speechRate: number; setSpeechRate: (v: number) => void;
   motionEnabled: boolean; setMotionEnabled: (v: boolean) => void;
-  /** 交错入场：子项之间的延迟间隔（秒） */
-  staggerInterval: number; setStaggerInterval: (v: number) => void;
-  /** 交错入场：子项自上而下滑入的位移距离（px） */
-  staggerDistance: number; setStaggerDistance: (v: number) => void;
-  /** 交错入场：缓动曲线名（harmony/easeOut/easeInOut/linear） */
-  staggerEase: string; setStaggerEase: (v: string) => void;
+  /** 界面动画预设：灵动 / 适中 / 优雅（对应不同缓动曲线和速度） */
+  animationPreset: AnimationPreset; setAnimationPreset: (v: AnimationPreset) => void;
   theme: Theme; setTheme: (v: Theme) => void;
   wallpaper: string; setWallpaper: (v: string) => void;
   fontColor: string; setFontColor: (v: string) => void;
@@ -228,9 +223,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [sound, setSound] = usePersistedBool(KEYS.sound, true);
   const [speechRate, setSpeechRate] = usePersistedNumber(KEYS.speechRate, 1);
   const [motionEnabled, setMotionEnabled] = usePersistedBool(KEYS.motionEnabled, DEFAULT_MOTION);
-  const [staggerInterval, setStaggerInterval] = usePersistedNumber(KEYS.staggerInterval, 0.08);
-  const [staggerDistance, setStaggerDistance] = usePersistedNumber(KEYS.staggerDistance, 18);
-  const [staggerEase, setStaggerEase] = usePersistedString(KEYS.staggerEase, "harmony");
+  const [animationPreset, setAnimationPreset] = usePersistedString(KEYS.animationPreset, "适中") as readonly [
+    AnimationPreset,
+    (v: AnimationPreset) => void,
+  ];
   const [theme, setTheme] = usePersistedTheme(KEYS.theme, "dark");
   const [wallpaper, setWallpaper] = usePersistedString(KEYS.wallpaper, "");
   const [fontColor, setFontColor] = usePersistedString(KEYS.fontColor, "");
@@ -288,9 +284,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       sound, setSound,
       speechRate, setSpeechRate,
       motionEnabled, setMotionEnabled,
-      staggerInterval, setStaggerInterval,
-      staggerDistance, setStaggerDistance,
-      staggerEase, setStaggerEase,
+      animationPreset, setAnimationPreset,
       theme, setTheme,
       wallpaper, setWallpaper,
       fontColor, setFontColor,

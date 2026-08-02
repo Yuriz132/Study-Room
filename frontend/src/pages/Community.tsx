@@ -14,7 +14,7 @@ import {
 } from '@/lib/forum'
 import { fetchComments, addComment, deleteComment, toggleCommentLike, uploadCommentImage, commentImageUrl, type Comment } from '@/lib/comments'
 import { getErrorMessage } from '@/lib/api-client'
-import { StaggerContainerEnter, StaggerItemEnter, STAGGER_EASE } from '@/components/MotionPrimitives'
+import { StaggerContainerEnter, StaggerItemEnter, ANIMATION_PRESETS } from '@/components/MotionPrimitives'
 import { ImageLightbox } from '@/components/ImageLightbox'
 import { useSettings } from '@/context/SettingsContext'
 
@@ -54,8 +54,9 @@ const ADMIN_USERNAME = '20051226'
 
 export default function Community() {
   const { isAuthed, user, isAdmin } = useAuth()
-  const { staggerInterval, staggerDistance, staggerEase } = useSettings()
-  const staggerOpts = { stagger: staggerInterval, distance: staggerDistance, ease: staggerEase as keyof typeof STAGGER_EASE }
+  const { animationPreset } = useSettings()
+  const preset = ANIMATION_PRESETS[animationPreset]
+  const staggerOpts = { stagger: preset.stagger, distance: preset.distance, ease: preset.ease }
   const [activeModule, setActiveModule] = useState<string>('all')
   const [inModule, setInModule] = useState(false)
 
@@ -365,18 +366,18 @@ function ForumPostRow({ post, onClick }: { post: ForumPost; onClick: () => void 
       {post.content && (
         <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-foreground/65">{post.content}</p>
       )}
-      <div className="mt-2 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[10px] text-muted-foreground/60">
           {post.authorAvatar ? (
-            <img src={post.authorAvatar} className="h-4 w-4 rounded-full object-cover" alt="" />
+            <img src={post.authorAvatar} className="h-4 w-4 shrink-0 rounded-full object-cover" alt="" />
           ) : (
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-muted/40 text-[8px] font-bold text-muted-foreground">
+            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted/40 text-[8px] font-bold text-muted-foreground">
               {(post.author || '?')[0]}
             </span>
           )}
-          {post.author} · {timeAgo(post.createdAt)}
+          <span className="truncate">{post.author} · {timeAgo(post.createdAt)}</span>
         </span>
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground/70">
+        <div className="flex shrink-0 items-center gap-2.5 rounded-lg bg-muted/35 px-2 py-1 text-[10px] tabular-nums text-muted-foreground/75">
           <span className="inline-flex items-center gap-0.5"><Eye className="h-3 w-3" />{post.views}</span>
           <span className="inline-flex items-center gap-0.5"><ThumbsUp className="h-3 w-3" />{post.likes}</span>
           <span className="inline-flex items-center gap-0.5"><MessageSquare className="h-3 w-3" />{post.commentCount}</span>

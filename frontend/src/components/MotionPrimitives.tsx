@@ -282,6 +282,28 @@ export const STAGGER_EASE: Record<StaggerEaseName, StaggerBezier> = {
   linear: [0, 0, 1, 1],
 };
 
+/**
+ * 动画预设 — 把「间隔/位移/时长/缓动」打包成三档语义化预设。
+ * - 灵动：快速轻快，效率感强（短间隔 + 短位移 + 缓出）
+ * - 适中：平衡自然，日常默认（中间隔 + 中位移 + harmony）
+ * - 优雅：从容舒缓，沉浸感强（长间隔 + 长位移 + 缓入缓出）
+ */
+export type AnimationPreset = "灵动" | "适中" | "优雅";
+
+export interface AnimationPresetConfig {
+  stagger: number;
+  distance: number;
+  duration: number;
+  ease: StaggerEaseName;
+  desc: string;
+}
+
+export const ANIMATION_PRESETS: Record<AnimationPreset, AnimationPresetConfig> = {
+  灵动: { stagger: 0.05, distance: 12, duration: 0.35, ease: "easeOut", desc: "快速轻快 · 效率优先" },
+  适中: { stagger: 0.08, distance: 18, duration: 0.45, ease: "harmony", desc: "平衡自然 · 日常推荐" },
+  优雅: { stagger: 0.12, distance: 24, duration: 0.6, ease: "easeInOut", desc: "从容舒缓 · 沉浸感强" },
+};
+
 /** 父容器把自定义项（位移/时长/缓动）下发给子项，避免子项拿不到用户设置 */
 const StaggerEnterConfig = createContext<{ distance: number; duration: number; ease: StaggerEaseName }>({
   distance: 18,

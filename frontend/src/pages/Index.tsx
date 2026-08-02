@@ -6,7 +6,7 @@ import { useDailyStats } from "@/hooks/use-daily-stats";
 import { aiDailyProverb, PROVERB_FALLBACKS, type Proverb } from "@/lib/ai";
 import ReviewReminder from "@/components/ReviewReminder";
 import { useSettings } from "@/context/SettingsContext";
-import { StaggerContainerEnter, StaggerItemEnter, STAGGER_EASE } from "@/components/MotionPrimitives";
+import { StaggerContainerEnter, StaggerItemEnter, ANIMATION_PRESETS } from "@/components/MotionPrimitives";
 
 /**
  * 首页 — 极简单屏（不滚动）：顶栏标题 + 中间每日箴言 + 底部今日概览与 Learning/Review 入口。
@@ -17,8 +17,9 @@ export default function Index() {
   const { known } = useKnown();
   const { dueToday } = useReviews();
   const { streak, todayReviewed, totalReviewed } = useDailyStats();
-  const { proverbEnabled, staggerInterval, staggerDistance, staggerEase } = useSettings();
-  const staggerOpts = { stagger: staggerInterval, distance: staggerDistance, ease: staggerEase as keyof typeof STAGGER_EASE };
+  const { proverbEnabled, animationPreset } = useSettings();
+  const preset = ANIMATION_PRESETS[animationPreset];
+  const staggerOpts = { stagger: preset.stagger, distance: preset.distance, ease: preset.ease };
 
   const toLearn = useMemo(() => allWords.filter((w) => !known.has(w.id)).length, [known]);
   const dueCount = dueToday();

@@ -36,7 +36,7 @@ export default function Starred() {
 
   return (
     <div className="hv-fade space-y-3 pt-2">
-      <TopBar title="收藏" subtitle="生词 · 已学 · 错词 · 笔记 · 工具" />
+      <TopBar title="收藏" />
 
       {/* 搜索 + 工具快捷入口（自「搜索」页迁移至此） */}
       <div className="space-y-3">

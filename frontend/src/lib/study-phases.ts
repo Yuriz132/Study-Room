@@ -11,19 +11,15 @@ export interface Phase {
 
 export const PHASES: Phase[] = [
   {
-    label: "夜间睡眠", sub: "深度休息", startH: 22, startM: 40, endH: 6, endM: 30,
-    emoji: "🌙", color: "text-indigo-400",
-  },
-  {
-    label: "起床洗漱", sub: "迎接新的一天", startH: 6, startM: 30, endH: 7, endM: 20,
+    label: "起床早读", sub: "清晨朗读", startH: 6, startM: 30, endH: 7, endM: 20,
     emoji: "🌅", color: "text-orange-400",
   },
   {
-    label: "早饭", sub: "补充能量", startH: 7, startM: 20, endH: 7, endM: 40,
+    label: "洗漱吃饭", sub: "补充能量", startH: 7, startM: 20, endH: 7, endM: 40,
     emoji: "🍳", color: "text-yellow-400",
   },
   {
-    label: "上午攻坚", sub: "黄金记忆时段", startH: 7, startM: 40, endH: 12, endM: 0,
+    label: "早上攻坚", sub: "黄金记忆时段", startH: 7, startM: 40, endH: 12, endM: 0,
     emoji: "📖", color: "text-amber-400",
   },
   {
@@ -45,6 +41,10 @@ export const PHASES: Phase[] = [
   {
     label: "晚间黄金档", sub: "高效复习", startH: 18, startM: 0, endH: 22, endM: 40,
     emoji: "🔥", color: "text-rose-400",
+  },
+  {
+    label: "夜间睡眠", sub: "深度休息", startH: 22, startM: 40, endH: 6, endM: 30,
+    emoji: "🌙", color: "text-indigo-400",
   },
 ];
 

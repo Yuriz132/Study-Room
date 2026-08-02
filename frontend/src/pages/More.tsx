@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Timer, Sparkles, BookOpen, Layers, Volume2, Lock, Bell, Gauge, Trash2, RefreshCcw, Calendar, ChevronRight, Swords, Zap, Sun, Moon, Monitor, Palette, UserCircle2, Image as ImageIcon, X, Shield, CheckCircle, XCircle } from "lucide-react";
+import { ANIMATION_PRESETS } from "@/components/MotionPrimitives";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings, type Theme, compressWallpaper } from "@/context/SettingsContext";
 import { useAuth } from "@/context/AuthContext";
 import { Leaderboard } from "@/components/Leaderboard";
@@ -20,9 +19,7 @@ export default function More() {
     sound, setSound,
     speechRate, setSpeechRate,
     motionEnabled, setMotionEnabled,
-    staggerInterval, setStaggerInterval,
-    staggerDistance, setStaggerDistance,
-    staggerEase, setStaggerEase,
+    animationPreset, setAnimationPreset,
     clearAllCache,
   } = useSettings();
   const { user, isAuthed, isAdmin, banUserAvatar } = useAuth();
@@ -71,33 +68,29 @@ export default function More() {
           <Switch checked={motionEnabled} onCheckedChange={setMotionEnabled} aria-label="界面动效" />
         </SettingCard>
         {motionEnabled && (
-          <>
-            <SettingCard icon={<Timer className="h-4 w-4 text-sky-300" />} title="交错间隔" desc="每个元素依次入场的延迟（0.02s ~ 0.25s，越大越舒缓）">
-              <div className="flex w-44 items-center gap-2">
-                <Slider min={0.02} max={0.25} step={0.01} value={[staggerInterval]} onValueChange={(v) => setStaggerInterval(v[0])} className="w-28" aria-label="交错间隔" />
-                <span className="w-10 text-right font-mono text-xs text-foreground">{staggerInterval.toFixed(2)}s</span>
-              </div>
-            </SettingCard>
-            <SettingCard icon={<Gauge className="h-4 w-4 text-amber-300" />} title="位移距离" desc="元素入场时从上向下滑动的像素（4px ~ 48px）">
-              <div className="flex w-44 items-center gap-2">
-                <Slider min={4} max={48} step={1} value={[staggerDistance]} onValueChange={(v) => setStaggerDistance(v[0])} className="w-28" aria-label="位移距离" />
-                <span className="w-10 text-right font-mono text-xs text-foreground">{staggerDistance}px</span>
-              </div>
-            </SettingCard>
-            <SettingCard icon={<Sparkles className="h-4 w-4 text-violet-300" />} title="缓动曲线" desc="元素入场运动的加速度节奏（和谐 / 缓出 / 缓入缓出 / 线性）">
-              <Select value={staggerEase} onValueChange={setStaggerEase}>
-                <SelectTrigger className="w-28" aria-label="缓动曲线">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="harmony">和谐</SelectItem>
-                  <SelectItem value="easeOut">缓出</SelectItem>
-                  <SelectItem value="easeInOut">缓入缓出</SelectItem>
-                  <SelectItem value="linear">线性</SelectItem>
-                </SelectContent>
-              </Select>
-            </SettingCard>
-          </>
+          <SettingCard icon={<Sparkles className="h-4 w-4 text-violet-300" />} title="动画风格" desc="三档预设，对应不同的入场速度、位移和缓动曲线">
+            <div className="grid grid-cols-3 gap-1.5">
+              {(["灵动", "适中", "优雅"] as const).map((p) => {
+                const active = animationPreset === p;
+                const cfg = ANIMATION_PRESETS[p];
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setAnimationPreset(p)}
+                    aria-pressed={active}
+                    className={`flex flex-col items-center gap-0.5 rounded-lg border px-2.5 py-2 text-center transition-all active:scale-95 ${
+                      active
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-transparent g-panel text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <div className="text-xs font-semibold">{p}</div>
+                    <div className="text-[9px] leading-tight opacity-70">{cfg.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </SettingCard>
         )}
         <SettingCard icon={<Sparkles className="h-4 w-4 text-violet-400" />} title="AI 每日英语谚语" desc="首页显示 AI 生成的英语谚语 + 中文注释（关掉则只显示当日日期）">
           <Switch checked={proverbEnabled} onCheckedChange={setProverbEnabled} aria-label="显示 AI 谚语" />

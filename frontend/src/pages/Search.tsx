@@ -155,26 +155,19 @@ export default function SearchPage() {
           <p className="mb-3 text-center text-xs text-muted-foreground/60">
             点击按钮 → 自动播放 26 分钟冥想音频 → 暗光遮罩 → 到点唤醒
           </p>
-          <div className="grid grid-cols-2 gap-3">
-            <NapButton
-              emoji="💤"
-              label="午睡启动"
-              time="12:30"
-              color="border-sky-500/20 bg-sky-500/[0.06] hover:bg-sky-500/[0.12]"
-              iconColor="text-sky-400"
-              disabled={!!napEnd}
-              onClick={() => startNap("midday")}
-            />
-            <NapButton
-              emoji="⚡"
-              label="傍晚小睡启动"
-              time="17:30"
-              color="border-violet-500/20 bg-violet-500/[0.06] hover:bg-violet-500/[0.12]"
-              iconColor="text-violet-400"
-              disabled={!!napEnd}
-              onClick={() => startNap("evening")}
-            />
-          </div>
+          <button
+            onClick={() => startNap("midday")}
+            disabled={!!napEnd}
+            className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-sky-500/25 bg-sky-500/[0.08] px-5 py-5 transition-all active:scale-[0.97] hover:bg-sky-500/[0.14] disabled:opacity-40"
+          >
+            <Moon className="h-7 w-7 text-sky-400 transition-transform group-hover:scale-110" />
+            <div className="text-left">
+              <div className="text-base font-semibold">冥想睡眠启动</div>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">
+                自动播放 26 分钟冥想音频 · 暗光遮罩 · 到点唤醒
+              </div>
+            </div>
+          </button>
         </section>
       )}
 
@@ -263,7 +256,7 @@ export default function SearchPage() {
             <h2 className="text-2xl font-bold text-white">无痛清醒</h2>
             <p className="text-sm text-white/80">坐直 · 喝水 · 进入下一段攻坚</p>
             <p className="text-xs text-white/35">
-              {wakeUp === "midday" ? "午睡" : "傍晚小睡"}完成 · 下一个阶段已开始
+              冥想睡眠完成 · 下一个阶段已开始
             </p>
             <button
               onClick={dismissWakeUp}
@@ -275,38 +268,5 @@ export default function SearchPage() {
         </div>
       )}
     </div>
-  );
-}
-
-/* ── 小睡按钮 ── */
-function NapButton({
-  emoji,
-  label,
-  time,
-  color,
-  iconColor,
-  disabled,
-  onClick,
-}: {
-  emoji: string;
-  label: string;
-  time: string;
-  color: string;
-  iconColor: string;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-all active:scale-[0.97] disabled:opacity-40 ${color}`}
-    >
-      <Moon className={`h-6 w-6 ${iconColor}`} />
-      <div className="text-sm font-semibold">{label}</div>
-      <div className="text-[11px] text-muted-foreground">
-        {emoji} {time} · 26分钟
-      </div>
-    </button>
   );
 }
