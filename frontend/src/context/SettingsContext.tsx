@@ -15,9 +15,12 @@ const KEYS = {
   theme: "liquid-words:theme",
   wallpaper: "liquid-words:wallpaper",
   fontColor: "liquid-words:fontColor",
+  skin: "liquid-words:skin",
 };
 
 export type Theme = "light" | "dark" | "system";
+
+export type Skin = "default" | "handdrawn";
 
 /** 压缩壁纸到合理大小（最长边 1920，JPEG 0.75） */
 export async function compressWallpaper(file: File): Promise<string> {
@@ -126,6 +129,7 @@ interface SettingsValue {
   /** 界面动画预设：灵动 / 适中 / 优雅（对应不同缓动曲线和速度） */
   animationPreset: AnimationPreset; setAnimationPreset: (v: AnimationPreset) => void;
   theme: Theme; setTheme: (v: Theme) => void;
+  skin: Skin; setSkin: (v: Skin) => void;
   wallpaper: string; setWallpaper: (v: string) => void;
   fontColor: string; setFontColor: (v: string) => void;
   clearAllCache: () => void;
@@ -213,6 +217,19 @@ function usePersistedTheme(key: string, defaultVal: Theme) {
   return [val, setVal] as const;
 }
 
+function usePersistedSkin(key: string, defaultVal: Skin) {
+  const [val, setVal] = useState<Skin>(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw === "handdrawn" ? "handdrawn" : defaultVal;
+    } catch { return defaultVal; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(key, val); } catch {}
+  }, [key, val]);
+  return [val, setVal] as const;
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [pomodoroVisible, setPomodoroVisible] = usePersistedBool(KEYS.pomodoroVisible, true);
   const [proverbEnabled, setProverbEnabled] = usePersistedBool(KEYS.proverbEnabled, true);
@@ -230,6 +247,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = usePersistedTheme(KEYS.theme, "dark");
   const [wallpaper, setWallpaper] = usePersistedString(KEYS.wallpaper, "");
   const [fontColor, setFontColor] = usePersistedString(KEYS.fontColor, "");
+  const [skin, setSkin] = usePersistedSkin(KEYS.skin, "default");
 
   // 将主题应用到 <html>：system 时跟随系统深浅偏好并监听变化
   useEffect(() => {
@@ -260,6 +278,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     else root.style.removeProperty("--foreground");
   }, [fontColor]);
 
+  // 主题风格皮肤：handdrawn 时给 <html> 加 class，手绘 CSS 才生效（与深浅主题解耦）
+  useEffect(() => {
+    document.documentElement.classList.toggle("handdrawn", skin === "handdrawn");
+  }, [skin]);
+
   const clearAllCache = () => {
     try {
       const keep = new Set(Object.values(KEYS));
@@ -286,6 +309,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       motionEnabled, setMotionEnabled,
       animationPreset, setAnimationPreset,
       theme, setTheme,
+      skin, setSkin,
       wallpaper, setWallpaper,
       fontColor, setFontColor,
       clearAllCache,

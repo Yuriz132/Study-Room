@@ -25,7 +25,6 @@ import ImmersiveLearn from "./components/ImmersiveLearn";
 import { PomodoroTimer } from "./components/PomodoroTimer";
 import { AnimatedRoutes } from "./components/AnimatedRoutes";
 import { PageTransition } from "./components/PageTransition";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const navItems = [
   { to: "/", label: "首页", icon: Home },
@@ -120,7 +119,6 @@ function NavBar() {
             </NavLink>
           );
         })}
-        <ThemeToggle />
       </div>
     </nav>
   );

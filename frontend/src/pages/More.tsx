@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Timer, Sparkles, BookOpen, Layers, Volume2, Lock, Bell, Gauge, Trash2, RefreshCcw, Calendar, ChevronRight, Swords, Zap, Sun, Moon, Monitor, Palette, UserCircle2, Image as ImageIcon, X, Shield, CheckCircle, XCircle } from "lucide-react";
+import { Timer, Sparkles, BookOpen, Layers, Volume2, Lock, Bell, Gauge, Trash2, RefreshCcw, Calendar, ChevronRight, Swords, Zap, Sun, Moon, Monitor, Palette, PenTool, UserCircle2, Image as ImageIcon, X, Shield, CheckCircle, XCircle } from "lucide-react";
 import { ANIMATION_PRESETS } from "@/components/MotionPrimitives";
 import { Switch } from "@/components/ui/switch";
-import { useSettings, type Theme, compressWallpaper } from "@/context/SettingsContext";
+import { useSettings, type Theme, type Skin, compressWallpaper } from "@/context/SettingsContext";
 import { useAuth } from "@/context/AuthContext";
 import { Leaderboard } from "@/components/Leaderboard";
 
@@ -62,6 +62,7 @@ export default function More() {
 
         <SectionTitle>界面</SectionTitle>
         <ThemeCard />
+        <SkinCard />
         <WallpaperCard />
         <FontColorCard />
         <SettingCard icon={<Zap className="h-4 w-4 text-amber-300" />} title="界面动效" desc="页面切换、卡片飞入等过渡动画（弱机或系统开启「减少动态效果」时自动关闭以保证流畅）">
@@ -304,6 +305,43 @@ function ThemeSwitcher({ value, onChange, className = "" }: { value: Theme; onCh
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function SkinCard() {
+  const { skin, setSkin } = useSettings();
+  const opts: { key: Skin; label: string }[] = [
+    { key: "default", label: "默认" },
+    { key: "handdrawn", label: "手绘风格" },
+  ];
+  return (
+    <div className="mb-2 rounded-2xl border g-border g-panel px-3.5 py-3">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-icon">
+          <PenTool className="h-4 w-4 text-rose-400" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium text-foreground">主题风格</div>
+          <div className="mt-0.5 text-xs text-muted-foreground/80">默认液态玻璃 / 手绘速写，可叠加在浅色或深色之上</div>
+        </div>
+      </div>
+      <div className="mt-3 flex gap-1 rounded-xl border g-border g-panel p-1">
+        {opts.map((o) => {
+          const active = skin === o.key;
+          return (
+            <button
+              key={o.key}
+              type="button"
+              onClick={() => setSkin(o.key)}
+              aria-pressed={active}
+              className={"flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all active:scale-95 " + (active ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground")}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

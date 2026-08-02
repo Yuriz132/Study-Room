@@ -1,24 +1,22 @@
 /* ===========================================================
-   手绘 / 速写风格主题（Hand-drawn Sketch Theme）
-   做法：仅覆写项目既有的 CSS 变量(:root/.dark)、body 背景，
-   以及 g-* 工具类与标题字体。不改动任何组件逻辑。
-   回退：删除 src/main.tsx 中 import "./theme-handdrawn.css" 这一行即可。
+   手绘 / 速写风格皮肤（Hand-drawn Sketch Skin）
+   - 仅在 <html class="handdrawn"> 时生效，作为「皮肤」叠加在
+     既有 浅色/深色 主题之上（可独立开关，与主题深浅解耦）。
+   - 仅覆写项目既有的 CSS 变量、body 背景、g-* 工具类与标题字体，
+     不改动任何组件逻辑。
+   - 关闭：去掉 <html> 上的 handdrawn class 即可，无需改其它代码。
    =========================================================== */
 
-/* ---------- 字体变量（渐进增强：离线回退系统手写体/无衬线，不影响稳定） ---------- */
-:root {
+/* ---------- 手绘专属字体 / 墨色变量（仅手绘皮肤内可见） ---------- */
+html.handdrawn {
   --font-hand: "Ma Shan Zheng", "Patrick Hand", "Comic Sans MS", "Chalkboard SE",
     "Segoe Print", "Bradley Hand", cursive;
-  --hand-ink: oklch(0.28 0.02 60);
-  --paper-line: oklch(0.30 0.02 60 / 0.06);
-}
-.dark {
-  --hand-ink: oklch(0.93 0.02 90);
-  --paper-line: oklch(0.95 0.01 90 / 0.05);
+  --hand-ink: oklch(0.28 0.02 60);            /* 墨色（浅色纸面） */
+  --paper-line: oklch(0.30 0.02 60 / 0.06);   /* 横向纸纹 */
 }
 
-/* ---------- 浅色：暖白纸 + 墨黑 + 马克笔 ---------- */
-:root {
+/* ---------- 浅色手绘：暖白纸 + 墨黑 + 马克笔 ---------- */
+html.handdrawn {
   --background: oklch(0.97 0.012 90);
   --foreground: oklch(0.27 0.02 60);
   --card: oklch(0.99 0.008 90 / 0.97);
@@ -44,8 +42,10 @@
   --surface: oklch(0.99 0.008 90 / 0.98);
 }
 
-/* ---------- 深色：夜色速写 ---------- */
-.dark {
+/* ---------- 深色手绘：夜色速写 ---------- */
+html.handdrawn.dark {
+  --hand-ink: oklch(0.93 0.02 90);
+  --paper-line: oklch(0.95 0.01 90 / 0.05);
   --background: oklch(0.22 0.02 265);
   --foreground: oklch(0.95 0.01 90);
   --card: oklch(0.26 0.02 265 / 0.96);
@@ -72,7 +72,7 @@
 }
 
 /* ---------- 背景：盖掉液态辉光，换成纸感(暖底 + 极淡横线) ---------- */
-body {
+html.handdrawn body {
   background-color: var(--background) !important;
   background-image:
     repeating-linear-gradient(
@@ -85,29 +85,33 @@ body {
   background-attachment: fixed !important;
 }
 
-/* ---------- 手绘描边工具类（覆写既有 g-*，不加 @layer 以保证优先级） ---------- */
-.g-panel,
-.g-surface,
-.g-soft {
+/* ---------- 手绘描边工具类（覆写既有 g-*） ---------- */
+html.handdrawn .g-panel,
+html.handdrawn .g-surface,
+html.handdrawn .g-soft {
   background: var(--glass-bg);
   border: 1.6px solid var(--hand-ink);
   border-radius: 225px 15px 200px 15px / 15px 200px 15px 225px;
   box-shadow: 2.5px 2.5px 0 color-mix(in oklch, var(--hand-ink) 55%, transparent);
 }
 
-.g-nav {
+html.handdrawn .g-nav {
   background: var(--glass-nav);
   border-bottom: 1.6px solid var(--hand-ink);
 }
 
-.g-icon {
+html.handdrawn .g-icon {
   background: var(--glass-icon);
   border: 1.4px solid var(--hand-ink);
   border-radius: 200px 14px 190px 14px / 14px 190px 14px 200px;
 }
 
 /* ---------- 标题用手写体（仅标题，正文保持清晰可读） ---------- */
-h1, h2, h3, .hand-font, .brand {
+html.handdrawn h1,
+html.handdrawn h2,
+html.handdrawn h3,
+html.handdrawn .hand-font,
+html.handdrawn .brand {
   font-family: var(--font-hand);
   font-weight: 400;
   letter-spacing: 0.01em;
