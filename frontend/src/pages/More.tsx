@@ -286,6 +286,33 @@ const SKIN_OPTS: { key: Skin; label: string; desc: string }[] = [
   { key: "mengnan",   label: "猛男粉",     desc: "热粉霓虹 · 光晕" },
 ];
 
+/* 主题风格预览缩略图：点开前按钮上直接展示当前皮肤的样子 */
+const SKIN_PREVIEW: Record<string, { bg: string; bar: string; border: string; radius: string }> = {
+  default:   { bg: "linear-gradient(135deg,#eef2f7,#dde3ec)", bar: "#64748b", border: "1px solid rgba(100,116,139,0.35)", radius: "7px" },
+  handdrawn: { bg: "#fbfaf4", bar: "#2b2b2b", border: "1.6px solid #2b2b2b", radius: "14px 6px 14px 6px" },
+  newspaper: { bg: "#f3ecdb", bar: "#b91c1c", border: "1px solid rgba(120,90,40,0.3)", radius: "2px" },
+  matcha:    { bg: "linear-gradient(135deg,#e7f4e8,#d3ebd5)", bar: "#2e9e5b", border: "1px solid rgba(46,158,91,0.35)", radius: "16px" },
+  minimal:   { bg: "#ffffff", bar: "#111827", border: "1px solid rgba(17,24,39,0.2)", radius: "5px" },
+  crayon:    { bg: "linear-gradient(135deg,#fff3e0,#ffe2c2)", bar: "#f97316", border: "2.5px solid #f97316", radius: "18px 10px 16px 10px" },
+  mengnan:   { bg: "linear-gradient(135deg,#ffe1ee,#ffc6e0)", bar: "#ec4899", border: "1px solid rgba(236,72,153,0.4)", radius: "16px" },
+};
+
+function SkinPreview({ skin }: { skin: Skin }) {
+  const p = SKIN_PREVIEW[skin] || SKIN_PREVIEW.default;
+  return (
+    <div
+      className="h-8 w-8 shrink-0 overflow-hidden ring-1 ring-border/40"
+      style={{ background: p.bg, border: p.border, borderRadius: p.radius }}
+    >
+      <div className="h-1.5 w-full" style={{ background: p.bar }} />
+      <div className="space-y-0.5 px-1 pt-1">
+        <div className="h-1 w-3/4 rounded-full" style={{ background: p.bar, opacity: 0.55 }} />
+        <div className="h-1 w-1/2 rounded-full" style={{ background: p.bar, opacity: 0.3 }} />
+      </div>
+    </div>
+  );
+}
+
 function SkinCard() {
   const { skin, setSkin } = useSettings();
   const current = SKIN_OPTS.find((o) => o.key === skin) || SKIN_OPTS[0];
@@ -294,6 +321,7 @@ function SkinCard() {
       icon={<PenTool className="h-4 w-4 text-rose-400" />}
       title="主题风格"
       value={current.label}
+      preview={<SkinPreview skin={skin} />}
       popoverTitle="选择主题风格"
     >
       {(close) => (
@@ -478,12 +506,13 @@ function FontColorCard() {
    ============================================================ */
 
 function PopoverMenu({
-  icon, title, value, popoverTitle, children,
+  icon, title, value, popoverTitle, preview, children,
 }: {
   icon: React.ReactNode;
   title: string;
   value: React.ReactNode;
   popoverTitle: string;
+  preview?: React.ReactNode;
   children: (close: () => void) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -522,7 +551,19 @@ function PopoverMenu({
     const popH = pop.offsetHeight;
     const gap = 8;
     const maxW = Math.min(r.width, 360);
-    if (r.top >= popH + gap) {
+    const middle = window.innerHeight / 2;
+    const btnCenter = r.top + r.height / 2;
+    const spaceAbove = r.top;
+    const spaceBelow = window.innerHeight - r.bottom;
+    let above: boolean;
+    if (btnCenter < middle) {
+      // 上半屏：优先向上弹（用户规则），空间不足则向下
+      above = spaceAbove >= popH + gap;
+    } else {
+      // 下半屏：优先向下弹（用户规则），空间不足则向上
+      above = !(spaceBelow >= popH + gap);
+    }
+    if (above) {
       setStyle({ left: r.left, width: maxW, bottom: window.innerHeight - r.top + gap });
     } else {
       setStyle({ left: r.left, width: maxW, top: r.bottom + gap });
@@ -552,7 +593,9 @@ function PopoverMenu({
         onClick={() => setOpen((v) => !v)}
         className="mb-2 flex w-full items-center gap-2.5 rounded-2xl border g-border g-panel px-3.5 py-3 text-left transition active:scale-[0.99]"
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-icon">{icon}</div>
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+          {preview ?? <div className="flex h-8 w-8 items-center justify-center rounded-lg g-icon">{icon}</div>}
+        </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-foreground">{title}</div>
           <div className="mt-0.5 truncate text-xs text-muted-foreground/80">{value}</div>
