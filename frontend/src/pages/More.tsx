@@ -317,6 +317,8 @@ function SkinCard() {
     { key: "newspaper", label: "报纸" },
     { key: "matcha", label: "薄荷抹茶" },
     { key: "minimal", label: "极简线条" },
+    { key: "crayon", label: "卡通蜡笔" },
+    { key: "mengnan", label: "猛男粉" },
   ];
   return (
     <div className="mb-2 rounded-2xl border g-border g-panel px-3.5 py-3">
@@ -326,7 +328,7 @@ function SkinCard() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-foreground">主题风格</div>
-          <div className="mt-0.5 text-xs text-muted-foreground/80">默认 / 手绘 / 报纸 / 薄荷 / 极简，可叠加在浅色或深色之上</div>
+          <div className="mt-0.5 text-xs text-muted-foreground/80">默认 / 手绘 / 报纸 / 薄荷 / 极简 / 卡通蜡笔 / 猛男粉，可叠加在浅色或深色之上</div>
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-1 rounded-xl border g-border g-panel p-1">

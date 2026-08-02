@@ -20,10 +20,10 @@ const KEYS = {
 
 export type Theme = "light" | "dark" | "system";
 
-export type Skin = "default" | "handdrawn" | "newspaper" | "matcha" | "minimal";
+export type Skin = "default" | "handdrawn" | "newspaper" | "matcha" | "minimal" | "crayon" | "mengnan";
 
 /** 所有可作为 <html> class 的皮肤值（default 不加 class），新增皮肤需同步更新 */
-const SKIN_VALUES = ["handdrawn", "newspaper", "matcha", "minimal"] as const;
+const SKIN_VALUES = ["handdrawn", "newspaper", "matcha", "minimal", "crayon", "mengnan"] as const;
 
 /** 压缩壁纸到合理大小（最长边 1920，JPEG 0.75） */
 export async function compressWallpaper(file: File): Promise<string> {
