@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef, useCallback } from "react";
-import { allWords } from "@/lib/words-data";
+import { useNavigate } from "react-router-dom";
+import { allWords, searchWords } from "@/lib/words-data";
 import { useStarred, useKnown } from "@/hooks/use-storage";
 import { useWrongWords } from "@/hooks/use-wrong-words";
 import { useNotes } from "@/hooks/use-notes";
@@ -7,6 +8,7 @@ import { speakWord } from "@/lib/speak";
 import TopBar from "@/components/TopBar";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { aiAnalyzeNote } from "@/lib/ai";
+import { FileText, Headphones, Library, BookOpen, Wrench } from "lucide-react";
 import type { Word } from "@/types/word";
 import type { Note } from "@/lib/authApi";
 
@@ -19,6 +21,11 @@ export default function Starred() {
   const { wrong, removeWrong, clearWrong } = useWrongWords();
   const { notes, addNote, updateNote, removeNote } = useNotes();
 
+  // 自「搜索」页迁移而来的搜索与工具快捷入口
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+  const results = useMemo(() => (q.trim() ? searchWords(q) : []), [q]);
+
   const starredWords = useMemo(() => allWords.filter((w) => starred.has(w.id)), [starred]);
   const knownWords = useMemo(() => allWords.filter((w) => known.has(w.id)), [known]);
 
@@ -29,7 +36,40 @@ export default function Starred() {
 
   return (
     <div className="hv-fade space-y-3 pt-2">
-      <TopBar title="收藏" subtitle="生词 · 已学 · 错词 · 笔记" />
+      <TopBar title="收藏" subtitle="生词 · 已学 · 错词 · 笔记 · 工具" />
+
+      {/* 搜索 + 工具快捷入口（自「搜索」页迁移至此） */}
+      <div className="space-y-3">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="搜索单词 / 音标 / 释义…"
+          className="h-12 w-full rounded-xl bg-card px-4 text-base text-foreground outline-none focus:ring-2 focus:ring-primary/50"
+        />
+        {!q.trim() && (
+          <div className="grid grid-cols-2 gap-2">
+            <QuickCard icon={<FileText className="h-4 w-4 text-emerald-400" />} title="AI 英语文章" onClick={() => navigate("/article")} />
+            <QuickCard icon={<Headphones className="h-4 w-4 text-violet-400" />} title="随身听" subtitle="维护中" onClick={() => navigate("/listen")} />
+            <QuickCard icon={<Library className="h-4 w-4 text-amber-400" />} title="自建词库" onClick={() => navigate("/custom")} />
+            <QuickCard icon={<BookOpen className="h-4 w-4 text-sky-400" />} title="公共笔记" onClick={() => navigate("/public-notes")} />
+          </div>
+        )}
+        {q.trim() && <p className="text-xs text-muted-foreground">找到 {results.length} 个结果</p>}
+        <div className="space-y-2">
+          {results.map((w) => (
+            <WordRow
+              key={w.id}
+              w={w}
+              action={
+                <>
+                  <button onClick={() => speakWord(w.word)} className="text-sm text-primary">🔊</button>
+                  <button onClick={() => toggle(w.id)} className={"text-lg " + (starred.has(w.id) ? "text-yellow-400" : "text-muted-foreground")}>{starred.has(w.id) ? "★" : "☆"}</button>
+                </>
+              }
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Tab 切换 */}
       <div className="flex rounded-2xl border g-border bg-card p-1">
@@ -208,6 +248,26 @@ function WordRow({ w, action }: { w: Word; action: React.ReactNode }) {
 function Empty({ text }: { text: string }) {
   return (
     <div className="rounded-2xl border g-border bg-card p-8 text-center text-sm text-muted-foreground">{text}</div>
+  );
+}
+
+function QuickCard({ icon, title, subtitle, onClick }: { icon: React.ReactNode; title: string; subtitle?: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2.5 rounded-2xl border g-border bg-card px-3.5 py-3 text-left transition-all active:scale-[0.97] hover:g-panel"
+    >
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-panel">{icon}</div>
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium text-foreground">{title}</div>
+        {subtitle && (
+          <div className="flex items-center gap-1 text-[11px] text-amber-400">
+            <Wrench className="h-3 w-3" />
+            {subtitle}
+          </div>
+        )}
+      </div>
+    </button>
   );
 }
 

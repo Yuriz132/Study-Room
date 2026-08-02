@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Search, Star, LayoutGrid, BookMarked, AudioLines, Users } from 'lucide-react';
+import { BookOpen, Star, LayoutGrid, BookMarked, AudioLines, Users, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LiquidGlass } from '@/components/LiquidGlass';
 import { AccountMenu } from '@/components/AccountMenu';
@@ -11,7 +11,7 @@ const navItems = [
   { to: '/custom', label: '词库', icon: BookMarked },
   { to: '/quiz', label: '测验', icon: AudioLines },
   { to: '/community', label: '社区', icon: Users },
-  { to: '/search', label: '搜索', icon: Search },
+  { to: '/search', label: '学习法', icon: Brain },
   { to: '/starred', label: '生词本', icon: Star },
 ];
 
