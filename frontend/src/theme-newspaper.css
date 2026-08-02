@@ -1,92 +1,201 @@
 /* ===========================================================
-   报纸 / 复古阅读皮肤（Newspaper / Vintage Reading）
-   - 仅在 <html class="newspaper"> 时生效，叠加在浅色/深色之上。
-   - 米黄报纸底 + 衬线标题 + 发丝级细分割线 + 扁平无阴影。
+   报纸 / 报章风格（Newspaper Broadsheet）
+   灵感来源：纽约时报 · 金融时报 · 人民日报 经典排版
+   - 暖调新闻纸底色 + 纸纹肌理 + 报红标题 + 衬线字体
+   - 双线分割 · 竖栏分隔线 · 墨迹描边
+   - 深色模式：夜间台灯下读旧报的氛围
    =========================================================== */
 
+/* ---- 基础变量：新闻纸暖调 + 报红主色 ---- */
 html.newspaper {
-  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", Georgia, "Times New Roman", serif;
-  --background: oklch(0.96 0.018 85);
-  --foreground: oklch(0.25 0.02 60);
-  --card: oklch(0.985 0.012 85 / 0.97);
-  --card-foreground: oklch(0.25 0.02 60);
-  --primary: oklch(0.50 0.17 27);
-  --primary-foreground: oklch(0.98 0.01 85);
-  --secondary: oklch(0.92 0.02 85);
-  --secondary-foreground: oklch(0.30 0.02 60);
-  --muted: oklch(0.93 0.015 85 / 0.9);
-  --muted-foreground: oklch(0.48 0.02 60);
-  --accent: oklch(0.91 0.03 85);
-  --border: oklch(0.25 0.02 60 / 0.45);
-  --ring: oklch(0.50 0.17 27);
-  --success: oklch(0.50 0.14 150);
-  --destructive: oklch(0.55 0.19 25);
-  --popover: oklch(0.985 0.012 85 / 0.98);
-  --popover-foreground: oklch(0.25 0.02 60);
-  --input: oklch(0.91 0.015 85);
-  --glass-bg: oklch(0.985 0.012 85 / 0.97);
-  --glass-bg-soft: oklch(0.96 0.018 85 / 0.9);
-  --glass-icon: oklch(0.985 0.012 85 / 0.95);
-  --glass-nav: oklch(0.96 0.018 85 / 0.96);
-  --surface: oklch(0.985 0.012 85 / 0.98);
+  --font-headline: "Noto Serif SC", "Songti SC", "STSong", "SimSun", Georgia, "Times New Roman", serif;
+
+  /* 浅色：经典新闻纸 */
+  --background: oklch(0.975 0.012 82);
+  --foreground: oklch(0.20 0.01 85);
+  --card: oklch(0.988 0.008 82 / 0.97);
+  --card-foreground: oklch(0.20 0.01 85);
+  --primary: oklch(0.50 0.18 22);
+  --primary-foreground: oklch(0.99 0.005 82);
+  --secondary: oklch(0.94 0.01 82);
+  --secondary-foreground: oklch(0.26 0.01 85);
+  --muted: oklch(0.95 0.008 82 / 0.9);
+  --muted-foreground: oklch(0.43 0.01 85);
+  --accent: oklch(0.93 0.015 82);
+  --border: oklch(0.20 0.01 85 / 0.15);
+  --ring: oklch(0.50 0.18 22);
+  --success: oklch(0.44 0.11 150);
+  --destructive: oklch(0.52 0.18 22);
+  --popover: oklch(0.988 0.008 82 / 0.98);
+  --popover-foreground: oklch(0.20 0.01 85);
+  --input: oklch(0.94 0.01 82);
+  --glass-bg: oklch(0.988 0.008 82 / 0.97);
+  --glass-bg-soft: oklch(0.975 0.012 82 / 0.9);
+  --glass-icon: oklch(0.988 0.008 82 / 0.95);
+  --glass-nav: oklch(0.975 0.012 82 / 0.96);
+  --surface: oklch(0.988 0.008 82 / 0.98);
 }
 
+/* 深色模式：暖灯下读旧报 */
 html.newspaper.dark {
-  --background: oklch(0.20 0.012 80);
-  --foreground: oklch(0.92 0.01 85);
-  --card: oklch(0.24 0.012 80 / 0.96);
-  --card-foreground: oklch(0.92 0.01 85);
-  --primary: oklch(0.64 0.17 27);
+  --background: oklch(0.18 0.012 80);
+  --foreground: oklch(0.90 0.01 82);
+  --card: oklch(0.22 0.012 80 / 0.96);
+  --card-foreground: oklch(0.90 0.01 82);
+  --primary: oklch(0.62 0.17 22);
   --primary-foreground: oklch(0.18 0.01 80);
-  --secondary: oklch(0.30 0.02 80);
-  --secondary-foreground: oklch(0.92 0.01 85);
-  --muted: oklch(0.28 0.015 80 / 0.85);
-  --muted-foreground: oklch(0.78 0.01 85);
-  --accent: oklch(0.32 0.03 80);
-  --border: oklch(0.92 0.01 85 / 0.35);
-  --ring: oklch(0.64 0.17 27);
-  --success: oklch(0.68 0.15 150);
-  --destructive: oklch(0.64 0.19 25);
-  --popover: oklch(0.24 0.012 80 / 0.98);
-  --popover-foreground: oklch(0.92 0.01 85);
-  --input: oklch(0.92 0.01 85 / 0.12);
-  --glass-bg: oklch(0.24 0.012 80 / 0.96);
-  --glass-bg-soft: oklch(0.28 0.012 80 / 0.9);
-  --glass-icon: oklch(0.28 0.012 80 / 0.95);
-  --glass-nav: oklch(0.22 0.012 80 / 0.97);
-  --surface: oklch(0.24 0.012 80 / 0.98);
+  --secondary: oklch(0.28 0.015 80);
+  --secondary-foreground: oklch(0.90 0.01 82);
+  --muted: oklch(0.26 0.012 80 / 0.85);
+  --muted-foreground: oklch(0.72 0.01 82);
+  --accent: oklch(0.30 0.02 80);
+  --border: oklch(0.90 0.01 82 / 0.18);
+  --ring: oklch(0.62 0.17 22);
+  --success: oklch(0.62 0.13 150);
+  --destructive: oklch(0.60 0.18 22);
+  --popover: oklch(0.22 0.012 80 / 0.98);
+  --popover-foreground: oklch(0.90 0.01 82);
+  --input: oklch(0.90 0.01 82 / 0.10);
+  --glass-bg: oklch(0.22 0.012 80 / 0.96);
+  --glass-bg-soft: oklch(0.26 0.012 80 / 0.9);
+  --glass-icon: oklch(0.26 0.012 80 / 0.95);
+  --glass-nav: oklch(0.20 0.012 80 / 0.97);
+  --surface: oklch(0.22 0.012 80 / 0.98);
 }
 
+/* ============================================================
+   Body 背景：新闻纸纤维纹理
+   ============================================================ */
 html.newspaper body {
   background-color: var(--background) !important;
-  background-image: none !important;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      oklch(0.20 0.01 85 / 0.008) 2px,
+      oklch(0.20 0.01 85 / 0.008) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      oklch(0.20 0.01 85 / 0.005) 1px,
+      oklch(0.20 0.01 85 / 0.005) 2px
+    ) !important;
+  background-attachment: fixed !important;
+  box-shadow: inset 0 0 120px oklch(0.85 0.04 85 / 0.15);
 }
 
+html.newspaper.dark body {
+  background-color: var(--background) !important;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      oklch(0.90 0.01 82 / 0.012) 2px,
+      oklch(0.90 0.01 82 / 0.012) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      oklch(0.90 0.01 82 / 0.006) 1px,
+      oklch(0.90 0.01 82 / 0.006) 2px
+    ) !important;
+  box-shadow: inset 0 0 120px oklch(0.30 0.03 30 / 0.20);
+}
+
+/* ============================================================
+   面板卡片：报章栏目风格
+   - 顶部粗线 + 底部细线 = 报纸栏目分隔
+   - 直角无圆角 = 印刷品质感
+   ============================================================ */
 html.newspaper .g-panel,
-html.newspaper .g-surface,
-html.newspaper .g-soft {
+html.newspaper .g-surface {
   background: var(--glass-bg);
+  border: none;
+  border-top: 2px solid var(--foreground);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+  position: relative;
+}
+
+/* 经典报纸双线装饰：h1 上方粗双线 + 下方单线 */
+html.newspaper h1 {
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: var(--font-headline);
+  font-weight: 700;
+  border-top: 3px double var(--foreground);
+  border-bottom: 1px solid var(--foreground);
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+}
+
+html.newspaper .g-soft {
+  background: var(--glass-bg-soft);
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 html.newspaper .g-nav {
   background: var(--glass-nav);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--foreground);
+  border-top: none;
+  border-left: none;
+  border-right: none;
 }
 
 html.newspaper .g-icon {
   background: var(--glass-icon);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 0;
 }
 
-html.newspaper h1,
+/* ============================================================
+   排版：衬线标题
+   ============================================================ */
 html.newspaper h2,
 html.newspaper h3,
-html.newspaper .brand,
-html.newspaper .hand-font {
-  font-family: var(--font-serif);
-  font-weight: 600;
-  letter-spacing: 0.01em;
+html.newspaper .hand-font,
+html.newspaper .brand {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   按钮：报红底色 + 直角 + 印刷墨渍阴影
+   ============================================================ */
+html.newspaper [class*=bg-primary] {
+  border-radius: 2px;
+  box-shadow: 1px 1px 0 oklch(0.20 0.01 85 / 0.25);
+}
+
+html.newspaper button:where(.rounded-xl, .rounded-2xl, .rounded-lg),
+html.newspaper a:where(.rounded-xl, .rounded-2xl, .rounded-lg) {
+  border-radius: 2px !important;
+}
+
+/* ============================================================
+   链接：经典报纸下划线
+   ============================================================ */
+html.newspaper a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* ============================================================
+   输入框：复古打字机风格
+   ============================================================ */
+html.newspaper input,
+html.newspaper textarea {
+  border-radius: 2px !important;
+  border: 1px solid var(--border);
+  background: oklch(0.99 0.005 82 / 0.8);
 }
