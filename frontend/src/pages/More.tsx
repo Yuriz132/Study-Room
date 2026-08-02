@@ -68,8 +68,17 @@ export default function More() {
           <Switch checked={motionEnabled} onCheckedChange={setMotionEnabled} aria-label="界面动效" />
         </SettingCard>
         {motionEnabled && (
-          <SettingCard icon={<Sparkles className="h-4 w-4 text-violet-300" />} title="动画风格" desc="三档预设，对应不同的入场速度、位移和缓动曲线">
-            <div className="grid grid-cols-3 gap-1.5">
+          <div className="rounded-2xl border g-border g-panel p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-panel">
+                <Sparkles className="h-4 w-4 text-violet-300" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-foreground">动画风格</div>
+                <p className="text-xs text-muted-foreground">三档预设，对应不同的入场速度、位移和缓动曲线</p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
               {(["灵动", "适中", "优雅"] as const).map((p) => {
                 const active = animationPreset === p;
                 const cfg = ANIMATION_PRESETS[p];
@@ -78,19 +87,19 @@ export default function More() {
                     key={p}
                     onClick={() => setAnimationPreset(p)}
                     aria-pressed={active}
-                    className={`flex flex-col items-center gap-0.5 rounded-lg border px-2.5 py-2 text-center transition-all active:scale-95 ${
+                    className={`flex flex-col items-center gap-0.5 rounded-xl border px-3 py-2.5 text-center transition-all active:scale-95 ${
                       active
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-transparent g-panel text-muted-foreground hover:text-foreground"
+                        ? "border-primary bg-primary/10 text-primary shadow-sm"
+                        : "border g-border text-muted-foreground hover:text-foreground hover:bg-card"
                     }`}
                   >
-                    <div className="text-xs font-semibold">{p}</div>
-                    <div className="text-[9px] leading-tight opacity-70">{cfg.desc}</div>
+                    <div className="text-sm font-semibold">{p}</div>
+                    <div className="text-[10px] leading-tight opacity-70">{cfg.desc}</div>
                   </button>
                 );
               })}
             </div>
-          </SettingCard>
+          </div>
         )}
         <SettingCard icon={<Sparkles className="h-4 w-4 text-violet-400" />} title="AI 每日英语谚语" desc="首页显示 AI 生成的英语谚语 + 中文注释（关掉则只显示当日日期）">
           <Switch checked={proverbEnabled} onCheckedChange={setProverbEnabled} aria-label="显示 AI 谚语" />
@@ -384,12 +393,13 @@ function WallpaperCard() {
 
 function FontColorCard() {
   const { fontColor, setFontColor } = useSettings();
-  // 颜色选择器只接受 #rrggbb；未自定义时用主题色占位（仅作控件默认值）
   const [swatch, setSwatch] = useState<string>(fontColor || "#ffffff");
   useEffect(() => {
     if (!fontColor) setSwatch("#ffffff");
     else setSwatch(fontColor);
   }, [fontColor]);
+
+  const PRESETS = ["#ffffff","#e2e8f0","#fbbf24","#f87171","#34d399","#60a5fa","#a78bfa","#f472b6","#000000"];
 
   return (
     <div className="mb-2 rounded-2xl border g-border g-panel px-3.5 py-3">
@@ -399,30 +409,44 @@ function FontColorCard() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-foreground">字体颜色</div>
-          <div className="mt-0.5 text-xs text-muted-foreground/80">自定义全站文字颜色（默认跟随主题）</div>
+          <div className="mt-0.5 text-xs text-muted-foreground/80">点击色块或选取器自定义全站文字</div>
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-3">
-        <input
-          type="color"
-          value={swatch}
-          onChange={(e) => setFontColor(e.target.value)}
-          className="h-10 w-16 cursor-pointer rounded-lg border g-border g-panel"
-          aria-label="选择字体颜色"
-        />
-        <span className="text-xs text-muted-foreground">{fontColor ? fontColor : "跟随主题"}</span>
-        {fontColor && (
+      <div className="mt-3 space-y-2.5">
+        <div className="flex flex-wrap gap-1.5">
+          {PRESETS.map((c) => (
+            <button
+              key={c}
+              onClick={() => setFontColor(c)}
+              className={`h-7 w-7 rounded-full border-2 transition active:scale-90 ${fontColor === c ? 'border-primary ring-1 ring-primary' : 'border-transparent'}`}
+              style={{ backgroundColor: c }}
+              aria-label={`字体颜色 ${c}`}
+            />
+          ))}
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            value={swatch}
+            onChange={(e) => setFontColor(e.target.value)}
+            className="h-10 w-14 shrink-0 cursor-pointer rounded-lg border g-border g-panel"
+            aria-label="选择字体颜色"
+          />
+          <div className="flex-1 truncate text-sm font-semibold" style={fontColor ? { color: fontColor } : undefined}>
+            Aa 预览效果
+          </div>
           <button
             onClick={() => setFontColor("")}
-            className="ml-auto rounded-full g-panel px-3 py-1 text-xs text-muted-foreground hover:g-panel"
+            disabled={!fontColor}
+            className="shrink-0 rounded-full g-panel px-3 py-1 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-40"
           >
             恢复默认
           </button>
-        )}
+        </div>
+        <p className="text-[11px] leading-relaxed text-muted-foreground/60">
+          提示：深色背景建议浅色，浅色背景建议深色
+        </p>
       </div>
-      <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground/60">
-        提示：在深色背景下建议使用浅色，浅色背景下建议使用深色，以保证可读。
-      </p>
     </div>
   );
 }

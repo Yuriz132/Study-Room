@@ -1,5 +1,4 @@
 import { useState } from "react";
-import TopBar from "@/components/TopBar";
 import { StudyPlans } from "@/components/StudyPlans";
 import StudyCalendar from "@/components/StudyCalendar";
 
@@ -11,7 +10,8 @@ export default function Plans() {
 
   return (
     <div className="hv-fade space-y-3">
-      <TopBar title="学习计划" subtitle="选章节 · 设目标 · 追踪进度" />
+      <h1 className="text-xl font-bold text-foreground">学习计划</h1>
+      <p className="-mt-1 text-xs text-muted-foreground">选章节 · 设目标 · 追踪进度</p>
 
       {/* Tab 切换 */}
       <div className="flex rounded-2xl border g-border bg-card p-1">

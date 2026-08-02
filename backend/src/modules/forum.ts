@@ -14,7 +14,7 @@ export function postIdToWordId(postId: string): number {
   return -(Math.abs(h) + 1_000_000)
 }
 
-export type ForumCategory = 'entertainment' | 'study' | 'qa' | 'daily'
+export type ForumCategory = 'announcement' | 'entertainment' | 'study' | 'qa' | 'daily'
 
 export interface ForumPost {
   _id: string
@@ -89,7 +89,7 @@ async function enrichPosts(posts: ForumPost[]): Promise<Array<ForumPost & { comm
 }
 
 const postSchema = z.object({
-  category: z.enum(['entertainment', 'study', 'qa', 'daily']),
+  category: z.enum(['announcement', 'entertainment', 'study', 'qa', 'daily']),
   title: z.string().trim().min(1, '标题不能为空').max(60, '标题最多 60 字'),
   content: z.string().trim().max(5000, '内容最多 5000 字').optional().default(''),
   images: z.array(z.string().regex(/^uploads\/[a-f0-9]{24}\.(jpg|png|webp|gif)$/)).max(9).optional(),
@@ -163,6 +163,13 @@ forumRouter.post('/forum/posts', authMiddleware, async (req: Request, res: Respo
   const u = (req as unknown as Record<string, unknown>).user as { username: string; role?: string } | undefined
   const author = u?.username || '匿名'
   const { category, title, content, images } = parsed.data
+
+  // 公告分类仅管理员可发布
+  if (category === 'announcement') {
+    const isAdminUser = !!u && (u.role === 'admin' || u.username === '20051226')
+    if (!isAdminUser) return res.status(403).json({ message: '公告仅限管理员发布' })
+  }
+
   const post: ForumPost = {
     _id: randomBytes(8).toString('hex'),
     category,

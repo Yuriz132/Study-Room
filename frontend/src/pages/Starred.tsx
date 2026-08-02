@@ -5,7 +5,6 @@ import { useStarred, useKnown } from "@/hooks/use-storage";
 import { useWrongWords } from "@/hooks/use-wrong-words";
 import { useNotes } from "@/hooks/use-notes";
 import { speakWord } from "@/lib/speak";
-import TopBar from "@/components/TopBar";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { aiAnalyzeNote } from "@/lib/ai";
 import { FileText, Headphones, Library, BookOpen, Wrench } from "lucide-react";
@@ -36,7 +35,10 @@ export default function Starred() {
 
   return (
     <div className="hv-fade space-y-3 pt-2">
-      <TopBar title="收藏" />
+      <h1 className="text-xl font-bold text-foreground">收藏</h1>
+      <p className="-mt-1 text-xs text-muted-foreground">
+        生词 {starredWords.length} · 已学 {knownWords.length} · 错词 {wrong.length} · 笔记 {notes.length}
+      </p>
 
       {/* 搜索 + 工具快捷入口（自「搜索」页迁移至此） */}
       <div className="space-y-3">

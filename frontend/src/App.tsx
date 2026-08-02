@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMotionEnabled } from "@/lib/motionPref";
-import { Home, BookOpen, Search, Star, MessageCircle, MoreHorizontal } from "lucide-react";
+import { Home, BookOpen, Brain, Star, MessageCircle, MoreHorizontal } from "lucide-react";
 import { AuthProvider } from "./context/AuthContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 import Index from "./pages/Index";
@@ -29,7 +29,7 @@ import { PageTransition } from "./components/PageTransition";
 const navItems = [
   { to: "/", label: "首页", icon: Home },
   { to: "/browse", label: "词库", icon: BookOpen },
-  { to: "/search", label: "搜索", icon: Search },
+  { to: "/search", label: "学习法", icon: Brain },
   { to: "/starred", label: "收藏", icon: Star },
   { to: "/community", label: "社区", icon: MessageCircle },
   { to: "/more", label: "更多", icon: MoreHorizontal },

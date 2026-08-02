@@ -83,11 +83,11 @@ export function Leaderboard() {
             key={key}
             onClick={() => { setTab(key); setExpanded(false) }}
             className={cn(
-              'flex flex-1 items-center justify-center gap-1 rounded-full px-3 py-1.5 transition-all',
+              'flex flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-full px-2 py-1.5 transition-all',
               tab === key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            <Icon className="h-3.5 w-3.5" /> {label}
+            <Icon className="h-3.5 w-3.5 shrink-0" /> {label}
           </button>
         ))}
       </div>

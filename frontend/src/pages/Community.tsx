@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   Coffee, HelpCircle, MessageSquare, Send, Loader2,
   ChevronLeft, ChevronRight, Plus, Eye, ThumbsUp, Heart, Trophy, Trash2, Flame, ImagePlus,
-  LayoutGrid, GraduationCap, Sun,
+  LayoutGrid, GraduationCap, Sun, Megaphone,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
@@ -35,6 +35,7 @@ function timeAgo(ts: number): string {
 /* ---- 社区 5 大板块（网格视图入口）---- */
 const FORUM_MODULES = [
   { key: 'all', label: '全部帖子', icon: LayoutGrid, desc: '社区里的所有帖子' },
+  { key: 'announcement', label: '公告', icon: Megaphone, desc: '社区公告与通知' },
   { key: 'entertainment', label: '娱乐', icon: Coffee, desc: '歌曲、段子、趣事分享' },
   { key: 'study', label: '学习', icon: GraduationCap, desc: '记忆妙招、学习方法' },
   { key: 'qa', label: '疑难', icon: HelpCircle, desc: '提问与解答互助' },
@@ -43,6 +44,7 @@ const FORUM_MODULES = [
 
 /* ---- 各分类元信息（用于帖子标签 / 发帖选择）---- */
 const CATEGORY_META: Record<string, { label: string; icon: typeof Coffee }> = {
+  announcement: { label: '公告', icon: Megaphone },
   entertainment: { label: '娱乐', icon: Coffee },
   study: { label: '学习', icon: GraduationCap },
   qa: { label: '疑难', icon: HelpCircle },
@@ -92,6 +94,7 @@ export default function Community() {
 function ModuleGrid({ onSelect }: { onSelect: (key: string) => void }) {
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
+  const [hotPosts, setHotPosts] = useState<ForumPost[]>([])
 
   useEffect(() => {
     (async () => {
@@ -100,6 +103,8 @@ function ModuleGrid({ onSelect }: { onSelect: (key: string) => void }) {
         const c: Record<string, number> = { all: all.length }
         all.forEach((p) => { c[p.category] = (c[p.category] || 0) + 1 })
         setCounts(c)
+        const sorted = [...all].sort((a, b) => (b.views - a.views) || (a.createdAt - b.createdAt)).slice(0, 10)
+        setHotPosts(sorted)
       } catch { /* ignore */ }
       finally { setLoading(false) }
     })()
@@ -133,6 +138,11 @@ function ModuleGrid({ onSelect }: { onSelect: (key: string) => void }) {
           </button>
         )
       })}
+
+      {/* 今日热榜 —— 挨着分类卡片下面 */}
+      {hotPosts.length > 0 && (
+        <HotRanking posts={hotPosts} onSelect={() => onSelect('all')} />
+      )}
     </div>
   )
 }
@@ -150,7 +160,6 @@ function ForumView({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [detailPost, setDetailPost] = useState<ForumPost | null>(null)
-  const [hotPosts, setHotPosts] = useState<ForumPost[]>([])
 
   const [showNew, setShowNew] = useState(false)
   const [newTitle, setNewTitle] = useState('')
@@ -160,6 +169,15 @@ function ForumView({
 
   const [postImages, setPostImages] = useState<{ preview: string; url?: string; uploading: boolean }[]>([])
   const postFileRef = useRef<HTMLInputElement>(null)
+
+  // 进入帖子详情时 push history，返回时 popstate 回到列表
+  useEffect(() => {
+    if (!detailPost) return
+    const onPop = () => { setDetailPost(null); load() }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailPost])
 
   const handlePostImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return
@@ -193,20 +211,6 @@ function ForumView({
   }, [category])
 
   useEffect(() => { void load() }, [load])
-
-  // 今日热榜：按浏览量降序取前 10；浏览量相同则发布时间最早优先
-  useEffect(() => {
-    (async () => {
-      try {
-        const all = await fetchForumPosts('all')
-        const base = category === 'all' ? all : all.filter((p) => p.category === category)
-        const sorted = [...base]
-          .sort((a, b) => (b.views - a.views) || (a.createdAt - b.createdAt))
-          .slice(0, 10)
-        setHotPosts(sorted)
-      } catch { /* ignore */ }
-    })()
-  }, [category])
 
   const moduleMeta = FORUM_MODULES.find((m) => m.key === category)
 
@@ -250,7 +254,7 @@ function ForumView({
       {detailPost ? (
         <ForumPostDetail
           post={detailPost}
-          onBack={() => { setDetailPost(null); void load() }}
+          onBack={() => window.history.back()}
           onDelete={() => handleDelete(detailPost._id)}
           isAuthed={isAuthed} user={user} isAdmin={isAdmin}
         />
@@ -266,7 +270,9 @@ function ForumView({
           {showNew && (
             <div className="mb-4 rounded-2xl border g-border g-panel p-4">
               <div className="mb-3 flex flex-wrap gap-1.5">
-                {Object.entries(CATEGORY_META).map(([key, meta]) => (
+                {Object.entries(CATEGORY_META)
+                .filter(([key]) => key !== 'announcement' || isAdmin || user === ADMIN_USERNAME)
+                .map(([key, meta]) => (
                   <button key={key} onClick={() => setNewCat(key)}
                     className={cn('rounded-lg px-3 py-1 text-xs font-medium transition', newCat === key ? 'bg-primary text-primary-foreground' : 'g-panel text-muted-foreground')}>
                     {meta.label}
@@ -333,12 +339,9 @@ function ForumView({
               {/* 列表布局：单列，保持原布局样式 */}
               <div className="flex flex-col gap-2.5">
                 {(isAuthed ? posts : posts.slice(0, 1)).map((p) => (
-                  <ForumPostRow key={p._id} post={p} onClick={() => setDetailPost(p)} />
+                  <ForumPostRow key={p._id} post={p} onClick={() => { setDetailPost(p); window.history.pushState({ postDetail: true }, ''); }} />
                 ))}
               </div>
-              {hotPosts.length > 0 && (
-                <HotRanking posts={hotPosts} onSelect={(p) => setDetailPost(p)} />
-              )}
             </>
           )}
         </>
@@ -587,13 +590,15 @@ function ForumPostDetail({ post, onBack, onDelete, isAuthed, user, isAdmin }: {
           <span>{current.author}</span><span>·</span><span>{timeAgo(current.createdAt)}</span>
           {canDeletePost && <button onClick={onDelete} className="ml-auto text-destructive hover:underline">删除</button>}
         </div>
-        {/* 统计行 + 点赞 */}
-        <div className="mt-3 flex items-center gap-4 border-t g-border pt-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {current.views}</span>
-          <span className="inline-flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> {current.commentCount}</span>
-          <button onClick={handleLike} className={cn('inline-flex items-center gap-1 transition', liked ? 'text-rose-500' : 'hover:text-rose-500')}>
-            <Heart className={cn('h-4 w-4', liked && 'fill-rose-500')} /> {likeCount}
-          </button>
+        {/* 统计行 — 右下角药丸 */}
+        <div className="mt-3 flex items-center justify-end border-t g-border pt-3">
+          <div className="flex shrink-0 items-center gap-2.5 rounded-lg bg-muted/35 px-2 py-1 text-[10px] tabular-nums text-muted-foreground/75">
+            <span className="inline-flex items-center gap-0.5"><Eye className="h-3 w-3" />{current.views}</span>
+            <span className="inline-flex items-center gap-0.5"><MessageSquare className="h-3 w-3" />{current.commentCount}</span>
+            <button onClick={handleLike} className={cn('inline-flex items-center gap-0.5 transition', liked ? 'text-rose-500' : 'hover:text-rose-500')}>
+              <Heart className={cn('h-3 w-3', liked && 'fill-rose-500')} />{likeCount}
+            </button>
+          </div>
         </div>
       </div>
 

@@ -144,11 +144,15 @@ export default function Index() {
 }
 
 function MiniStat({ label, value, sub, highlight }: { label: string; value: string; sub?: string; highlight?: boolean }) {
+  const navigate = useNavigate();
   return (
-    <div className="flex flex-col items-center rounded-xl border g-border g-panel px-1 py-2">
+    <button
+      onClick={() => navigate("/plans")}
+      className="flex flex-col items-center rounded-xl border g-border g-panel px-1 py-2 transition-all active:scale-[0.97] hover:g-panel"
+    >
       <div className={`text-base font-bold leading-none ${highlight ? "text-sky-500 dark:text-sky-300" : "text-foreground"}`}>{value}</div>
       {sub && <div className="text-[9px] text-muted-foreground/60">{sub}</div>}
       <div className="mt-0.5 text-[10px] text-muted-foreground/70">{label}</div>
-    </div>
+    </button>
   );
 }
