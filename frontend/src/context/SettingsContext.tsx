@@ -20,7 +20,10 @@ const KEYS = {
 
 export type Theme = "light" | "dark" | "system";
 
-export type Skin = "default" | "handdrawn";
+export type Skin = "default" | "handdrawn" | "newspaper" | "matcha" | "minimal";
+
+/** 所有可作为 <html> class 的皮肤值（default 不加 class），新增皮肤需同步更新 */
+const SKIN_VALUES = ["handdrawn", "newspaper", "matcha", "minimal"] as const;
 
 /** 压缩壁纸到合理大小（最长边 1920，JPEG 0.75） */
 export async function compressWallpaper(file: File): Promise<string> {
@@ -221,7 +224,7 @@ function usePersistedSkin(key: string, defaultVal: Skin) {
   const [val, setVal] = useState<Skin>(() => {
     try {
       const raw = localStorage.getItem(key);
-      return raw === "handdrawn" ? "handdrawn" : defaultVal;
+      return (SKIN_VALUES as readonly string[]).includes(raw ?? "") ? (raw as Skin) : defaultVal;
     } catch { return defaultVal; }
   });
   useEffect(() => {
@@ -278,9 +281,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     else root.style.removeProperty("--foreground");
   }, [fontColor]);
 
-  // 主题风格皮肤：handdrawn 时给 <html> 加 class，手绘 CSS 才生效（与深浅主题解耦）
+  // 主题风格皮肤：给 <html> 加当前 skin class（default 不加），并移除其它 skin class（与深浅主题解耦）
   useEffect(() => {
-    document.documentElement.classList.toggle("handdrawn", skin === "handdrawn");
+    const root = document.documentElement;
+    SKIN_VALUES.forEach((k) => { if (k !== skin) root.classList.remove(k); });
+    if (skin !== "default") root.classList.add(skin);
   }, [skin]);
 
   const clearAllCache = () => {

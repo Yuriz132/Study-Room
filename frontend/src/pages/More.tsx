@@ -314,6 +314,9 @@ function SkinCard() {
   const opts: { key: Skin; label: string }[] = [
     { key: "default", label: "默认" },
     { key: "handdrawn", label: "手绘风格" },
+    { key: "newspaper", label: "报纸" },
+    { key: "matcha", label: "薄荷抹茶" },
+    { key: "minimal", label: "极简线条" },
   ];
   return (
     <div className="mb-2 rounded-2xl border g-border g-panel px-3.5 py-3">
@@ -323,10 +326,10 @@ function SkinCard() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-foreground">主题风格</div>
-          <div className="mt-0.5 text-xs text-muted-foreground/80">默认液态玻璃 / 手绘速写，可叠加在浅色或深色之上</div>
+          <div className="mt-0.5 text-xs text-muted-foreground/80">默认 / 手绘 / 报纸 / 薄荷 / 极简，可叠加在浅色或深色之上</div>
         </div>
       </div>
-      <div className="mt-3 flex gap-1 rounded-xl border g-border g-panel p-1">
+      <div className="mt-3 flex flex-wrap gap-1 rounded-xl border g-border g-panel p-1">
         {opts.map((o) => {
           const active = skin === o.key;
           return (
@@ -335,7 +338,7 @@ function SkinCard() {
               type="button"
               onClick={() => setSkin(o.key)}
               aria-pressed={active}
-              className={"flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all active:scale-95 " + (active ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground")}
+              className={"flex-1 min-w-[72px] px-2 py-1.5 text-xs font-medium transition-all active:scale-95 " + (active ? "rounded-lg bg-primary text-primary-foreground shadow" : "rounded-lg text-muted-foreground hover:text-foreground")}
             >
               {o.label}
             </button>

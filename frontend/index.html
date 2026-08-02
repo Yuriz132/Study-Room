@@ -16,7 +16,7 @@
           var r = document.documentElement;
           r.classList.toggle("dark", dark);
           r.style.colorScheme = dark ? "dark" : "light";
-          try { if (localStorage.getItem("liquid-words:skin") === "handdrawn") r.classList.add("handdrawn"); } catch (e2) {}
+          try { var sk = localStorage.getItem("liquid-words:skin"); if (sk && sk !== "default") r.classList.add(sk); } catch (e2) {}
         } catch (e) {}
       })();
     </script>

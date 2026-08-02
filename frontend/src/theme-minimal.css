@@ -1,0 +1,81 @@
+/* ===========================================================
+   极简线条皮肤（Minimal Lines）
+   - 仅在 <html class="minimal"> 时生效，叠加在浅色/深色之上。
+   - 近单色 + 发丝级细边框 + 扁平无阴影，大量留白，专注背诵。
+   =========================================================== */
+
+html.minimal {
+  --background: oklch(0.985 0.002 250);
+  --foreground: oklch(0.22 0.01 260);
+  --card: oklch(1 0 0 / 0.92);
+  --card-foreground: oklch(0.22 0.01 260);
+  --primary: oklch(0.32 0.02 260);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.005 260);
+  --secondary-foreground: oklch(0.26 0.01 260);
+  --muted: oklch(0.96 0.004 260 / 0.9);
+  --muted-foreground: oklch(0.50 0.01 260);
+  --accent: oklch(0.94 0.006 260);
+  --border: oklch(0.2 0.02 260 / 0.16);
+  --ring: oklch(0.32 0.02 260);
+  --success: oklch(0.52 0.13 150);
+  --destructive: oklch(0.56 0.20 25);
+  --popover: oklch(1 0 0 / 0.97);
+  --popover-foreground: oklch(0.22 0.01 260);
+  --input: oklch(0.94 0.004 260);
+  --glass-bg: oklch(1 0 0 / 0.9);
+  --glass-bg-soft: oklch(0.985 0.002 250 / 0.7);
+  --glass-icon: oklch(1 0 0 / 0.92);
+  --glass-nav: oklch(0.985 0.002 250 / 0.92);
+  --surface: oklch(1 0 0 / 0.95);
+}
+
+html.minimal.dark {
+  --background: oklch(0.16 0.006 260);
+  --foreground: oklch(0.96 0 0);
+  --card: oklch(0.205 0.006 260 / 0.92);
+  --card-foreground: oklch(0.96 0 0);
+  --primary: oklch(0.95 0 0);
+  --primary-foreground: oklch(0.16 0.006 260);
+  --secondary: oklch(0.28 0.01 260);
+  --secondary-foreground: oklch(0.96 0 0);
+  --muted: oklch(0.26 0.008 260 / 0.85);
+  --muted-foreground: oklch(0.72 0.01 260);
+  --accent: oklch(0.30 0.01 260);
+  --border: oklch(1 0 0 / 0.14);
+  --ring: oklch(0.95 0 0);
+  --success: oklch(0.66 0.14 150);
+  --destructive: oklch(0.62 0.20 25);
+  --popover: oklch(0.205 0.006 260 / 0.97);
+  --popover-foreground: oklch(0.96 0 0);
+  --input: oklch(1 0 0 / 0.12);
+  --glass-bg: oklch(0.205 0.006 260 / 0.92);
+  --glass-bg-soft: oklch(0.19 0.006 260 / 0.7);
+  --glass-icon: oklch(0.26 0.008 260 / 0.9);
+  --glass-nav: oklch(0.18 0.006 260 / 0.94);
+  --surface: oklch(0.205 0.006 260 / 0.95);
+}
+
+html.minimal body {
+  background-color: var(--background) !important;
+  background-image: none !important;
+}
+
+html.minimal .g-panel,
+html.minimal .g-surface,
+html.minimal .g-soft {
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+html.minimal .g-nav {
+  background: var(--glass-nav);
+  border-bottom: 1px solid var(--border);
+}
+
+html.minimal .g-icon {
+  background: var(--glass-icon);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}

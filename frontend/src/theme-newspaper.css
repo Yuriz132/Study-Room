@@ -1,0 +1,92 @@
+/* ===========================================================
+   报纸 / 复古阅读皮肤（Newspaper / Vintage Reading）
+   - 仅在 <html class="newspaper"> 时生效，叠加在浅色/深色之上。
+   - 米黄报纸底 + 衬线标题 + 发丝级细分割线 + 扁平无阴影。
+   =========================================================== */
+
+html.newspaper {
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", Georgia, "Times New Roman", serif;
+  --background: oklch(0.96 0.018 85);
+  --foreground: oklch(0.25 0.02 60);
+  --card: oklch(0.985 0.012 85 / 0.97);
+  --card-foreground: oklch(0.25 0.02 60);
+  --primary: oklch(0.50 0.17 27);
+  --primary-foreground: oklch(0.98 0.01 85);
+  --secondary: oklch(0.92 0.02 85);
+  --secondary-foreground: oklch(0.30 0.02 60);
+  --muted: oklch(0.93 0.015 85 / 0.9);
+  --muted-foreground: oklch(0.48 0.02 60);
+  --accent: oklch(0.91 0.03 85);
+  --border: oklch(0.25 0.02 60 / 0.45);
+  --ring: oklch(0.50 0.17 27);
+  --success: oklch(0.50 0.14 150);
+  --destructive: oklch(0.55 0.19 25);
+  --popover: oklch(0.985 0.012 85 / 0.98);
+  --popover-foreground: oklch(0.25 0.02 60);
+  --input: oklch(0.91 0.015 85);
+  --glass-bg: oklch(0.985 0.012 85 / 0.97);
+  --glass-bg-soft: oklch(0.96 0.018 85 / 0.9);
+  --glass-icon: oklch(0.985 0.012 85 / 0.95);
+  --glass-nav: oklch(0.96 0.018 85 / 0.96);
+  --surface: oklch(0.985 0.012 85 / 0.98);
+}
+
+html.newspaper.dark {
+  --background: oklch(0.20 0.012 80);
+  --foreground: oklch(0.92 0.01 85);
+  --card: oklch(0.24 0.012 80 / 0.96);
+  --card-foreground: oklch(0.92 0.01 85);
+  --primary: oklch(0.64 0.17 27);
+  --primary-foreground: oklch(0.18 0.01 80);
+  --secondary: oklch(0.30 0.02 80);
+  --secondary-foreground: oklch(0.92 0.01 85);
+  --muted: oklch(0.28 0.015 80 / 0.85);
+  --muted-foreground: oklch(0.78 0.01 85);
+  --accent: oklch(0.32 0.03 80);
+  --border: oklch(0.92 0.01 85 / 0.35);
+  --ring: oklch(0.64 0.17 27);
+  --success: oklch(0.68 0.15 150);
+  --destructive: oklch(0.64 0.19 25);
+  --popover: oklch(0.24 0.012 80 / 0.98);
+  --popover-foreground: oklch(0.92 0.01 85);
+  --input: oklch(0.92 0.01 85 / 0.12);
+  --glass-bg: oklch(0.24 0.012 80 / 0.96);
+  --glass-bg-soft: oklch(0.28 0.012 80 / 0.9);
+  --glass-icon: oklch(0.28 0.012 80 / 0.95);
+  --glass-nav: oklch(0.22 0.012 80 / 0.97);
+  --surface: oklch(0.24 0.012 80 / 0.98);
+}
+
+html.newspaper body {
+  background-color: var(--background) !important;
+  background-image: none !important;
+}
+
+html.newspaper .g-panel,
+html.newspaper .g-surface,
+html.newspaper .g-soft {
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+html.newspaper .g-nav {
+  background: var(--glass-nav);
+  border-bottom: 1px solid var(--border);
+}
+
+html.newspaper .g-icon {
+  background: var(--glass-icon);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+html.newspaper h1,
+html.newspaper h2,
+html.newspaper h3,
+html.newspaper .brand,
+html.newspaper .hand-font {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
