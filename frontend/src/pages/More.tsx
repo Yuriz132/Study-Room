@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Timer, Sparkles, BookOpen, Layers, Volume2, Lock, Bell, Gauge, Trash2, RefreshCcw, Calendar, ChevronRight, Swords, Zap, Sun, Moon, Monitor, Palette, PenTool, UserCircle2, Image as ImageIcon, X, Shield, CheckCircle, XCircle } from "lucide-react";
@@ -288,40 +288,37 @@ const SKIN_OPTS: { key: Skin; label: string; desc: string }[] = [
 
 function SkinCard() {
   const { skin, setSkin } = useSettings();
-  const [open, setOpen] = useState(false);
   const current = SKIN_OPTS.find((o) => o.key === skin) || SKIN_OPTS[0];
-
   return (
-    <>
-      <SelectorCard
-        icon={<PenTool className="h-4 w-4 text-rose-400" />}
-        title="主题风格"
-        desc={current.label + " · " + current.desc}
-        onClick={() => setOpen(true)}
-      />
-      {open && (
-        <PopupSheet title="选择主题风格" onClose={() => setOpen(false)}>
-          <div className="flex flex-col gap-1">
-            {SKIN_OPTS.map((o) => (
+    <PopoverMenu
+      icon={<PenTool className="h-4 w-4 text-rose-400" />}
+      title="主题风格"
+      value={current.label}
+      popoverTitle="选择主题风格"
+    >
+      {(close) => (
+        <div className="flex flex-col gap-0.5 pb-1">
+          {SKIN_OPTS.map((o) => {
+            const active = skin === o.key;
+            return (
               <button
                 key={o.key}
-                onClick={() => { setSkin(o.key); setOpen(false); }}
-                className={"flex items-center justify-between rounded-xl px-4 py-3 text-left transition active:scale-[0.98] " + (skin === o.key ? "bg-primary text-primary-foreground" : "hover:bg-muted/40")}
+                onClick={() => { setSkin(o.key); close(); }}
+                className={"flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left transition active:scale-[0.98] " + (active ? "bg-primary/10 text-primary" : "hover:bg-muted/40 text-foreground")}
               >
-                <div>
+                <div className="min-w-0">
                   <div className="text-sm font-medium">{o.label}</div>
-                  <div className={"mt-0.5 text-xs " + (skin === o.key ? "text-primary-foreground/70" : "text-muted-foreground")}>{o.desc}</div>
+                  <div className={"mt-0.5 text-xs " + (active ? "text-primary/70" : "text-muted-foreground")}>{o.desc}</div>
                 </div>
-                {skin === o.key && <CheckCircle className="h-4 w-4 shrink-0" />}
+                {active && <CheckCircle className="h-4 w-4 shrink-0" />}
               </button>
-            ))}
-          </div>
-        </PopupSheet>
+            );
+          })}
+        </div>
       )}
-    </>
+    </PopoverMenu>
   );
 }
-
 function ThemeCard() {
   const { theme, setTheme } = useSettings();
   return (
@@ -407,7 +404,6 @@ function WallpaperCard() {
 
 function FontColorCard() {
   const { fontColor, setFontColor } = useSettings();
-  const [open, setOpen] = useState(false);
   const [swatch, setSwatch] = useState<string>(fontColor || "#ffffff");
   useEffect(() => {
     if (!fontColor) setSwatch("#ffffff");
@@ -417,187 +413,204 @@ function FontColorCard() {
   const PRESETS = ["#ffffff","#e2e8f0","#fbbf24","#f87171","#34d399","#60a5fa","#a78bfa","#f472b6","#000000"];
 
   return (
-    <>
-      <div className="mb-2 rounded-2xl border g-border g-panel px-3.5 py-3">
-        <button
-          onClick={() => setOpen(true)}
-          className="flex w-full items-center gap-2.5 text-left"
-        >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-icon">
-            <Palette className="h-4 w-4 text-amber-400" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-foreground">字体颜色</div>
-            <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground/80">
-              {fontColor ? (
-                <>
-                  <span className="inline-block h-4 w-4 rounded-full border border-border" style={{ backgroundColor: fontColor }} />
-                  <span className="font-mono text-[11px]">{fontColor}</span>
-                </>
-              ) : (
-                "跟随主题自动适配"
-              )}
-            </div>
-          </div>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </button>
-      </div>
-
-      {open && (
-        <PopupSheet title="选择字体颜色" onClose={() => setOpen(false)}>
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
+    <PopoverMenu
+      icon={<Palette className="h-4 w-4 text-amber-400" />}
+      title="字体颜色"
+      value={
+        fontColor ? (
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-3.5 w-3.5 rounded-full border border-border" style={{ backgroundColor: fontColor }} />
+            <span className="font-mono text-[11px]">{fontColor}</span>
+          </span>
+        ) : "跟随主题自动适配"
+      }
+      popoverTitle="选择字体颜色"
+    >
+      {(close) => (
+        <div className="space-y-2.5 p-1">
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => { setFontColor(""); close(); }}
+              className={"flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition active:scale-95 " + (!fontColor ? "bg-primary/10 text-primary" : "hover:bg-muted/40 text-foreground")}
+            >
+              <div className="h-5 w-5 rounded-full border-2 border-dashed border-current" /> 默认
+            </button>
+            {PRESETS.map((c) => (
               <button
-                onClick={() => { setFontColor(""); setOpen(false); }}
-                className={"flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm transition active:scale-95 " + (!fontColor ? "bg-primary text-primary-foreground" : "hover:bg-muted/40")}
-              >
-                <div className="h-5 w-5 rounded-full border-2 border-dashed border-current" />
-                默认
-              </button>
-              {PRESETS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => { setFontColor(c); setOpen(false); }}
-                  className={"h-10 w-10 rounded-xl border-2 transition active:scale-90 " + (fontColor === c ? "border-primary ring-1 ring-primary" : "border-transparent")}
-                  style={{ backgroundColor: c }}
-                  aria-label={`字体颜色 ${c}`}
-                />
-              ))}
-            </div>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={swatch}
-                onChange={(e) => setFontColor(e.target.value)}
-                className="h-10 w-14 shrink-0 cursor-pointer rounded-lg border g-border g-panel"
-                aria-label="选择字体颜色"
+                key={c}
+                onClick={() => { setFontColor(c); close(); }}
+                className={"h-9 w-9 rounded-xl border-2 transition active:scale-90 " + (fontColor === c ? "border-primary ring-1 ring-primary" : "border-transparent")}
+                style={{ backgroundColor: c }}
+                aria-label={"字体颜色 " + c}
               />
-              <div className="flex-1 truncate text-sm font-semibold" style={fontColor ? { color: fontColor } : undefined}>
-                Aa 预览效果
-              </div>
-              <button
-                onClick={() => { setFontColor(""); setOpen(false); }}
-                disabled={!fontColor}
-                className="shrink-0 rounded-full g-panel px-3 py-1 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-40"
-              >
-                恢复默认
-              </button>
-            </div>
-            <p className="text-[11px] leading-relaxed text-muted-foreground/60">
-              深色背景建议浅色，浅色背景建议深色
-            </p>
+            ))}
           </div>
-        </PopupSheet>
+          <div className="flex items-center gap-3 pt-1">
+            <input
+              type="color"
+              value={swatch}
+              onChange={(e) => setFontColor(e.target.value)}
+              className="h-10 w-14 shrink-0 cursor-pointer rounded-lg border g-border g-panel"
+              aria-label="选择字体颜色"
+            />
+            <div className="flex-1 truncate text-sm font-semibold" style={fontColor ? { color: fontColor } : undefined}>
+              Aa 预览效果
+            </div>
+            <button
+              onClick={() => { setFontColor(""); close(); }}
+              disabled={!fontColor}
+              className="shrink-0 rounded-full g-panel px-3 py-1 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-40"
+            >
+              恢复默认
+            </button>
+          </div>
+          <p className="text-[11px] leading-relaxed text-muted-foreground/60">
+            深色背景建议浅色，浅色背景建议深色
+          </p>
+        </div>
       )}
-    </>
+    </PopoverMenu>
   );
 }
-
 /* ============================================================
-   共享组件：弹窗选择器
+   共享组件：锚点气泡菜单（Popover Menu）
+   触发按钮展示当前选中项；点击在按钮上方弹出浮层单选。
    ============================================================ */
 
-/** 收起的选项卡片（只显示当前值 + 点击箭头） */
-function SelectorCard({ icon, title, desc, onClick }: {
-  icon: React.ReactNode; title: string; desc: string; onClick: () => void
+function PopoverMenu({
+  icon, title, value, popoverTitle, children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  value: React.ReactNode;
+  popoverTitle: string;
+  children: (close: () => void) => React.ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [style, setStyle] = useState<React.CSSProperties>({});
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+
+  const close = useCallback(() => setOpen(false), []);
+
+  const updateCoords = useCallback(() => {
+    const btn = triggerRef.current;
+    if (!btn) return;
+    const r = btn.getBoundingClientRect();
+    setCoords({ top: r.top, left: r.left, width: r.width });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updateCoords();
+    const onScroll = () => updateCoords();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [open, updateCoords]);
+
+  useLayoutEffect(() => {
+    if (!open || !coords) return;
+    const btn = triggerRef.current;
+    const pop = popRef.current;
+    if (!btn || !pop) return;
+    const r = btn.getBoundingClientRect();
+    const popH = pop.offsetHeight;
+    const gap = 8;
+    const maxW = Math.min(r.width, 360);
+    if (r.top >= popH + gap) {
+      setStyle({ left: r.left, width: maxW, bottom: window.innerHeight - r.top + gap });
+    } else {
+      setStyle({ left: r.left, width: maxW, top: r.bottom + gap });
+    }
+  }, [open, coords]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t) || popRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   return (
-    <div className="mb-2 rounded-2xl border g-border g-panel px-3.5 py-3">
-      <button onClick={onClick} className="flex w-full items-center gap-2.5 text-left">
+    <>
+      <button
+        ref={triggerRef}
+        onClick={() => setOpen((v) => !v)}
+        className="mb-2 flex w-full items-center gap-2.5 rounded-2xl border g-border g-panel px-3.5 py-3 text-left transition active:scale-[0.99]"
+      >
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-icon">{icon}</div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-foreground">{title}</div>
-          <div className="mt-0.5 text-xs text-muted-foreground/80 truncate">{desc}</div>
+          <div className="mt-0.5 truncate text-xs text-muted-foreground/80">{value}</div>
         </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <ChevronRight className={"h-4 w-4 shrink-0 text-muted-foreground transition-transform " + (open ? "rotate-90" : "")} />
       </button>
-    </div>
-  );
-}
 
-/** 底部弹出面板（仿 iOS Action Sheet，从底部滑入） */
-function PopupSheet({ title, onClose, children }: {
-  title: string; onClose: () => void; children: React.ReactNode
-}) {
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
-      {/* 半透明遮罩 */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      {/* 内容面板 */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg animate-[slideUp_0.25s_ease-out] rounded-t-3xl border-t g-border bg-background/98 backdrop-blur-xl p-4 pb-8 shadow-2xl"
-      >
-        {/* 拖动指示器 */}
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-muted-foreground/25" />
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-semibold text-foreground">{title}</h3>
-          <button
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-full g-icon transition hover:bg-muted"
+      {open && coords && createPortal(
+        <div className="fixed inset-0 z-50" onClick={close}>
+          <div
+            ref={popRef}
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: "fixed", ...style }}
+            className="animate-[popIn_0.15s_ease-out] rounded-2xl border g-border bg-background/98 backdrop-blur-xl p-2 shadow-2xl"
           >
-            <X className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-        </div>
-        {children}
-      </div>
-      <style>{`
-        @keyframes slideUp {
-          from { transform: translateY(100%); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-      `}</style>
-    </div>,
-    document.body
-  );
-}
-
-/** 动画预设卡片（收起的） */
-function AnimationPresetCard() {
-  const { animationPreset, setAnimationPreset } = useSettings();
-  const [open, setOpen] = useState(false);
-  const current = ANIMATION_PRESETS[animationPreset];
-
-  return (
-    <>
-      <div className="rounded-2xl border g-border g-panel p-4">
-        <button onClick={() => setOpen(true)} className="flex w-full items-start gap-3 text-left">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg g-panel">
-            <Sparkles className="h-4 w-4 text-violet-300" />
+            <div className="px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">{popoverTitle}</div>
+            {children(close)}
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-foreground">动画风格</div>
-            <div className="mt-0.5 text-xs text-muted-foreground">
-              {animationPreset} · {current.desc}
-            </div>
-          </div>
-          <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
-        </button>
-      </div>
-
-      {open && (
-        <PopupSheet title="选择动画风格" onClose={() => setOpen(false)}>
-          <div className="flex flex-col gap-1">
-            {(["灵动", "适中", "优雅"] as const).map((p) => {
-              const active = animationPreset === p;
-              const cfg = ANIMATION_PRESETS[p];
-              return (
-                <button
-                  key={p}
-                  onClick={() => { setAnimationPreset(p); setOpen(false); }}
-                  className={"flex items-center justify-between rounded-xl px-4 py-3 text-left transition active:scale-[0.98] " + (active ? "bg-primary text-primary-foreground" : "hover:bg-muted/40")}
-                >
-                  <div>
-                    <div className="text-sm font-medium">{p}</div>
-                    <div className={"mt-0.5 text-xs " + (active ? "text-primary-foreground/70" : "text-muted-foreground")}>{cfg.desc}</div>
-                  </div>
-                  {active && <CheckCircle className="h-4 w-4 shrink-0" />}
-                </button>
-              );
-            })}
-          </div>
-        </PopupSheet>
+          <style>{`@keyframes popIn { from { opacity:0; transform: translateY(8px) scale(0.96); } to { opacity:1; transform: none; } }`}</style>
+        </div>,
+        document.body
       )}
     </>
+  );
+}
+
+/** 动画预设卡片（收起的锚点气泡菜单） */
+function AnimationPresetCard() {
+  const { animationPreset, setAnimationPreset } = useSettings();
+  const current = ANIMATION_PRESETS[animationPreset];
+  return (
+    <PopoverMenu
+      icon={<Sparkles className="h-4 w-4 text-violet-300" />}
+      title="动画风格"
+      value={animationPreset + " · " + current.desc}
+      popoverTitle="选择动画风格"
+    >
+      {(close) => (
+        <div className="flex flex-col gap-0.5 pb-1">
+          {(["灵动", "适中", "优雅"] as const).map((p) => {
+            const active = animationPreset === p;
+            const cfg = ANIMATION_PRESETS[p];
+            return (
+              <button
+                key={p}
+                onClick={() => { setAnimationPreset(p); close(); }}
+                className={"flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left transition active:scale-[0.98] " + (active ? "bg-primary/10 text-primary" : "hover:bg-muted/40 text-foreground")}
+              >
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">{p}</div>
+                  <div className={"mt-0.5 text-xs " + (active ? "text-primary/70" : "text-muted-foreground")}>{cfg.desc}</div>
+                </div>
+                {active && <CheckCircle className="h-4 w-4 shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </PopoverMenu>
   );
 }
