@@ -164,25 +164,25 @@ export default function SearchPage() {
           </div>
         )}
 
-        {/* 冥想睡眠播放器 */}
-        {!isNight && (
-          <div className="mt-3 border-t g-border pt-3">
-            <button
-              onClick={() => startNap("midday")}
-              disabled={!!napEnd}
-              className="group flex w-full items-center justify-center gap-2.5 rounded-xl border border-sky-500/25 bg-sky-500/[0.08] px-4 py-4 transition-all active:scale-[0.97] hover:bg-sky-500/[0.14] disabled:opacity-40"
-            >
-              <Moon className="h-6 w-6 text-sky-400 transition-transform group-hover:scale-110" />
-              <div className="text-left">
-                <div className="text-sm font-semibold">冥想睡眠启动 · 26 分钟</div>
-                <div className="mt-0.5 text-[10px] text-muted-foreground/60">自动播放 → 暗光遮罩 → 到点唤醒</div>
+        {/* 冥想睡眠播放器（白天/夜间均可使用） */}
+        <div className="mt-3 border-t g-border pt-3">
+          <button
+            onClick={() => startNap(isNight ? "evening" : "midday")}
+            disabled={!!napEnd}
+            className="group flex w-full items-center justify-center gap-2.5 rounded-xl border border-sky-500/25 bg-sky-500/[0.08] px-4 py-4 transition-all active:scale-[0.97] hover:bg-sky-500/[0.14] disabled:opacity-40"
+          >
+            <Moon className="h-6 w-6 text-sky-400 transition-transform group-hover:scale-110" />
+            <div className="text-left">
+              <div className="text-sm font-semibold">
+                {isNight ? "夜间助眠音频 · 26 分钟" : "冥想睡眠启动 · 26 分钟"}
               </div>
-            </button>
-            <p className="mt-1.5 text-center text-[10px] text-muted-foreground/45">
-              建议佩戴降噪耳机  首次缓冲约 8 秒
-            </p>
-          </div>
-        )}
+              <div className="mt-0.5 text-[10px] text-muted-foreground/60">自动播放 → 暗光遮罩 → 到点唤醒</div>
+            </div>
+          </button>
+          <p className="mt-1.5 text-center text-[10px] text-muted-foreground/45">
+            建议佩戴降噪耳机  首次缓冲约 8 秒
+          </p>
+        </div>
       </section>
 
       {/* 时间轴清单 */}

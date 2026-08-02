@@ -21,7 +21,7 @@ html.handdrawn {
   --foreground: oklch(0.27 0.02 60);
   --card: oklch(0.99 0.008 90 / 0.97);
   --card-foreground: oklch(0.27 0.02 60);
-  --primary: oklch(0.32 0.03 50);
+  --primary: oklch(0.58 0.03 60);
   --primary-foreground: oklch(0.98 0.01 90);
   --secondary: oklch(0.93 0.02 90);
   --secondary-foreground: oklch(0.30 0.02 60);
@@ -29,7 +29,7 @@ html.handdrawn {
   --muted-foreground: oklch(0.55 0.02 60);
   --accent: oklch(0.92 0.04 90);
   --border: oklch(0.30 0.02 60 / 0.45);
-  --ring: oklch(0.32 0.03 50);
+  --ring: oklch(0.58 0.03 60);
   --success: oklch(0.55 0.14 150);
   --destructive: oklch(0.58 0.19 25);
   --popover: oklch(0.99 0.008 90 / 0.98);
@@ -50,7 +50,7 @@ html.handdrawn.dark {
   --foreground: oklch(0.95 0.01 90);
   --card: oklch(0.26 0.02 265 / 0.96);
   --card-foreground: oklch(0.95 0.01 90);
-  --primary: oklch(0.88 0.03 90);
+  --primary: oklch(0.72 0.03 85);
   --primary-foreground: oklch(0.20 0.02 60);
   --secondary: oklch(0.32 0.03 265);
   --secondary-foreground: oklch(0.95 0.01 90);
@@ -58,7 +58,7 @@ html.handdrawn.dark {
   --muted-foreground: oklch(0.80 0.02 90);
   --accent: oklch(0.34 0.05 265);
   --border: oklch(0.92 0.02 90 / 0.35);
-  --ring: oklch(0.88 0.03 90);
+  --ring: oklch(0.72 0.03 85);
   --success: oklch(0.72 0.16 150);
   --destructive: oklch(0.66 0.19 25);
   --popover: oklch(0.26 0.02 265 / 0.98);

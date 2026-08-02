@@ -17,6 +17,7 @@ import { getErrorMessage } from '@/lib/api-client'
 import { StaggerContainerEnter, StaggerItemEnter, ANIMATION_PRESETS } from '@/components/MotionPrimitives'
 import { ImageLightbox } from '@/components/ImageLightbox'
 import { useSettings } from '@/context/SettingsContext'
+import { useChat } from '@/hooks/use-chat'
 
 /* ---- 时间格式化 ---- */
 function timeAgo(ts: number): string {
@@ -61,6 +62,7 @@ export default function Community() {
   const staggerOpts = { stagger: preset.stagger, distance: preset.distance, ease: preset.ease }
   const [activeModule, setActiveModule] = useState<string>('all')
   const [inModule, setInModule] = useState(false)
+  const [showChat, setShowChat] = useState(false)
 
   return (
     <StaggerContainerEnter className="min-h-screen pb-24 pt-6" options={staggerOpts}>
@@ -73,14 +75,16 @@ export default function Community() {
         </StaggerItemEnter>
 
         <StaggerItemEnter>
-          {inModule ? (
+          {showChat ? (
+            <ChatRoom onBack={() => setShowChat(false)} />
+          ) : inModule ? (
             <ForumView
               category={activeModule}
               onBack={() => setInModule(false)}
               isAuthed={isAuthed} user={user} isAdmin={isAdmin}
             />
           ) : (
-            <ModuleGrid onSelect={(k) => { setActiveModule(k); setInModule(true) }} />
+            <ModuleGrid onSelect={(k) => { setActiveModule(k); setInModule(true) }} onChat={() => setShowChat(true)} />
           )}
         </StaggerItemEnter>
       </div>
@@ -91,7 +95,7 @@ export default function Community() {
 /* ===================================================================
    板块网格视图（5 个模块卡片，与「全部帖子」一致的横向卡片）
    =================================================================== */
-function ModuleGrid({ onSelect }: { onSelect: (key: string) => void }) {
+function ModuleGrid({ onSelect, onChat }: { onSelect: (key: string) => void; onChat: () => void }) {
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [hotPosts, setHotPosts] = useState<ForumPost[]>([])
@@ -112,6 +116,25 @@ function ModuleGrid({ onSelect }: { onSelect: (key: string) => void }) {
 
   return (
     <div className="flex flex-col gap-3">
+      {/* 实时聊天室入口 — 抖音风格 */}
+      <button
+        onClick={onChat}
+        className="group flex items-center gap-3 rounded-2xl border g-border g-panel p-4 text-left transition active:scale-[0.98] hover:border-primary/40 relative overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.04] to-transparent" />
+        <div className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-400 to-violet-500 text-white shadow-lg shadow-rose-500/20">
+          <MessageSquare className="h-5 w-5" />
+        </div>
+        <div className="relative z-10 min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="whitespace-nowrap text-[15px] font-semibold text-foreground">实时聊天室</span>
+            <span className="shrink-0 rounded-full bg-rose-500 text-white px-2 py-0.5 text-[10px] font-bold animate-pulse">LIVE</span>
+          </div>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground/70">和在线学友一起聊天</p>
+        </div>
+        <ChevronRight className="relative z-10 h-4 w-4 shrink-0 text-muted-foreground/40" />
+      </button>
+
       {FORUM_MODULES.map((m) => {
         const Icon = m.icon
         return (
@@ -786,6 +809,165 @@ function CommentItem({ c, isAdmin, postAuthor, currentUser, isReply, onReply, on
         <Heart className={cn('h-4 w-4', liked && 'fill-rose-500')} />
         <span className="text-[10px] tabular-nums">{likes}</span>
       </button>
+    </div>
+  )
+}
+
+/* ===================================================================
+   抖音风格实时聊天室
+   =================================================================== */
+function ChatRoom({ onBack }: { onBack: () => void }) {
+  const { messages, connected, joined, error, onlineCount, send } = useChat()
+  const [text, setText] = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // 自动滚到底部
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // 进入聊天室时聚焦输入框
+  useEffect(() => {
+    if (joined) inputRef.current?.focus()
+  }, [joined])
+
+  const handleSend = () => {
+    if (!text.trim() || !joined) return
+    send(text)
+    setText('')
+  }
+
+  const fmtTime = (ts: number) => {
+    const d = new Date(ts)
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
+
+  // 用户颜色哈希（稳定色板）
+  const userColor = (name: string) => {
+    const palette = [
+      'text-rose-400', 'text-sky-400', 'text-emerald-400', 'text-amber-400',
+      'text-violet-400', 'text-cyan-400', 'text-pink-400', 'text-lime-400',
+      'text-orange-400', 'text-blue-400', 'text-fuchsia-400', 'text-teal-400',
+    ]
+    let hash = 0
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+    return palette[Math.abs(hash) % palette.length]
+  }
+
+  return (
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 11rem)' }}>
+      {/* 顶栏：返回 + 在线人数 */}
+      <div className="mb-3 flex items-center justify-between rounded-2xl border g-border g-panel px-4 py-2.5">
+        <button onClick={onBack} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition">
+          <ChevronLeft className="h-4 w-4" /> 返回
+        </button>
+        <div className="flex items-center gap-2.5">
+          <span className="text-sm font-semibold text-foreground">💬 聊天室</span>
+          <div className="flex items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1">
+            <span className={cn('h-2 w-2 rounded-full', connected ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]' : 'bg-gray-400')} />
+            <span className="text-[11px] tabular-nums text-muted-foreground">{onlineCount} 人在线</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 消息列表：半透明毛玻璃风格 */}
+      <div className="flex-1 overflow-y-auto rounded-2xl border g-border bg-black/[0.02] dark:bg-white/[0.02] p-3 mb-3"
+        style={{
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.01) 100%)',
+        }}
+      >
+        {!joined && (
+          <div className="flex h-full flex-col items-center justify-center gap-2">
+            {error ? (
+              <>
+                <MessageSquare className="h-8 w-8 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground/60">{error}</p>
+                <Link to="/login" className="rounded-xl bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground">去登录</Link>
+              </>
+            ) : (
+              <>
+                <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
+                <p className="text-xs text-muted-foreground/60">正在连接聊天室…</p>
+              </>
+            )}
+          </div>
+        )}
+
+        {joined && messages.length === 0 && (
+          <div className="flex h-full flex-col items-center justify-center gap-2">
+            <MessageSquare className="h-8 w-8 text-muted-foreground/25" />
+            <p className="text-sm text-muted-foreground/50">还没有消息，来打破沉默吧 🎉</p>
+          </div>
+        )}
+
+        {messages.map((msg) =>
+          msg.type === 'system' ? (
+            <div key={msg.id} className="flex justify-center my-2.5">
+              <span className="rounded-full bg-muted/40 px-3 py-0.5 text-[11px] text-muted-foreground/60">
+                {msg.text}
+              </span>
+            </div>
+          ) : (
+            <div key={msg.id} className="flex gap-2.5 mb-3 group">
+              {/* 头像 */}
+              {msg.avatar ? (
+                <img src={msg.avatar} className="mt-0.5 h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-border/30" alt="" />
+              ) : (
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary ring-1 ring-primary/20">
+                  {(msg.username || '?')[0]}
+                </div>
+              )}
+              {/* 消息内容 */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-1.5 mb-0.5">
+                  <span className={cn('text-[12px] font-semibold', userColor(msg.username))}>
+                    {msg.username}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/45">{fmtTime(msg.timestamp)}</span>
+                </div>
+                <div className="inline-block max-w-full rounded-2xl rounded-tl-sm bg-muted/30 dark:bg-muted/20 px-3 py-1.5">
+                  <p className="text-[13px] leading-relaxed text-foreground/85 break-words whitespace-pre-wrap">{msg.text}</p>
+                </div>
+              </div>
+            </div>
+          )
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* 底部输入框：抖音风格 */}
+      <div className="flex items-end gap-2">
+        <div className="relative flex-1">
+          <input
+            ref={inputRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
+            }}
+            maxLength={500}
+            placeholder={joined ? '说点什么…' : '连接中…'}
+            disabled={!joined}
+            className="w-full rounded-2xl border g-border bg-muted/20 dark:bg-muted/10 px-4 py-2.5 pr-12 text-sm text-foreground outline-none placeholder:text-muted-foreground/40 transition focus:border-primary/40 disabled:opacity-50"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/35 tabular-nums">
+            {text.length}/500
+          </span>
+        </div>
+        <button
+          onClick={handleSend}
+          disabled={!joined || !text.trim()}
+          className={cn(
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all active:scale-90',
+            joined && text.trim()
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+              : 'cursor-not-allowed bg-muted/20 text-muted-foreground/30'
+          )}
+        >
+          <Send className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   )
 }
