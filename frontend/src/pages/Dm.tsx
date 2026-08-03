@@ -4,13 +4,15 @@ import { ChevronLeft, Send, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 import { useDm, type DmMessage } from '@/hooks/use-dm'
+import { usePresence } from '@/context/PresenceContext'
 import { ChatDisclaimer } from '@/components/ChatDisclaimer'
 
 export default function Dm() {
   const { username = '' } = useParams()
   const navigate = useNavigate()
   const { user, isAuthed } = useAuth()
-  const { messages, connected, joined, error, send } = useDm(username)
+  const { messages, joined, error, send } = useDm(username)
+  const { isOnline } = usePresence()
   const [text, setText] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -18,10 +20,6 @@ export default function Dm() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
-
-  useEffect(() => {
-    if (joined) inputRef.current?.focus()
-  }, [joined])
 
   const handleSend = () => {
     if (!text.trim() || !joined) return
@@ -47,7 +45,7 @@ export default function Dm() {
   }
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 11rem)' }}>
+    <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100dvh - 11rem)' }}>
       {/* 顶栏 */}
       <div className="mb-3 flex items-center gap-2 rounded-2xl border g-border g-panel px-4 py-2.5">
         <button onClick={() => navigate('/friends')} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:g-panel hover:text-foreground active:scale-90" aria-label="返回">
@@ -55,13 +53,13 @@ export default function Dm() {
         </button>
         <button onClick={() => navigate('/user/' + encodeURIComponent(username))} className="text-sm font-semibold text-foreground hover:underline">💬 {username}</button>
         <div className="ml-auto flex items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1">
-          <span className={cn('h-2 w-2 rounded-full', connected ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]' : 'bg-gray-400')} />
-          <span className="text-[11px] tabular-nums text-muted-foreground">{connected ? '在线' : '连接中'}</span>
+          <span className={cn('h-2 w-2 rounded-full', isOnline(username) ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]' : 'bg-gray-400')} />
+          <span className="text-[11px] tabular-nums text-muted-foreground">{isOnline(username) ? '在线' : '离线'}</span>
         </div>
       </div>
 
       {/* 消息列表 */}
-      <div className="flex-1 overflow-y-auto rounded-2xl border g-border bg-black/[0.02] dark:bg-white/[0.02] p-3 mb-3 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl border g-border bg-black/[0.02] dark:bg-white/[0.02] p-3 mb-3 space-y-3">
         <ChatDisclaimer />
         {!joined && (
           <div className="flex h-full flex-col items-center justify-center gap-2">
