@@ -189,3 +189,20 @@ export async function aiDailyProverb(): Promise<Proverb> {
   } catch {}
   return PROVERB_FALLBACKS[Math.floor(Math.random() * PROVERB_FALLBACKS.length)];
 }
+
+// ============================================================
+// Mimo 学习助手（后端代理 /api/ai/mimo，密钥在服务端，对话由前端本地保存）
+// 模型：mimo-v2.5；非流式，稳定返回完整文本。
+// ============================================================
+export async function mimoChat(
+  messages: ChatMessage[],
+  opts: { max_tokens?: number; temperature?: number; signal?: AbortSignal } = {},
+): Promise<string> {
+  const { data } = await apiClient.post<{ content: string; model: string }>('/ai/mimo', {
+    messages,
+    max_tokens: opts.max_tokens,
+    temperature: opts.temperature,
+  })
+  return data.content || ''
+}
+

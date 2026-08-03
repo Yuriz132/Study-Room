@@ -7,11 +7,12 @@ import { useNotes } from "@/hooks/use-notes";
 import { speakWord } from "@/lib/speak";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { aiAnalyzeNote } from "@/lib/ai";
+import { StudyAssistantChat } from "@/components/StudyAssistantChat";
 import { FileText, Headphones, Library, BookOpen, Wrench } from "lucide-react";
 import type { Word } from "@/types/word";
 import type { Note } from "@/lib/authApi";
 
-type Tab = "starred" | "known" | "wrong" | "notes";
+type Tab = "starred" | "known" | "wrong" | "notes" | "assistant";
 
 export default function Starred() {
   const [tab, setTab] = useState<Tab>("starred");
@@ -79,6 +80,7 @@ export default function Starred() {
         <TabBtn active={tab === "known"} onClick={() => { setTab("known"); doneEditing(); }} label="已学" count={knownWords.length} />
         <TabBtn active={tab === "wrong"} onClick={() => { setTab("wrong"); doneEditing(); }} label="错词" count={wrong.length} />
         <TabBtn active={tab === "notes"} onClick={() => { setTab("notes"); doneEditing(); }} label="笔记" count={notes.length} />
+        <TabBtn active={tab === "assistant"} onClick={() => setTab("assistant")} label="AI 助手" />
       </div>
 
       {/* 生词（收藏） */}
@@ -209,13 +211,16 @@ export default function Starred() {
         )
       )}
 
+      {/* AI 学习助手（对话本地保存） */}
+      {tab === "assistant" && <StudyAssistantChat />}
+
       {/* 图片灯箱：点击笔记图片放大预览 / 保存 */}
       <ImageLightbox src={preview} onClose={() => setPreview(null)} />
     </div>
   );
 }
 
-function TabBtn({ active, onClick, label, count }: { active: boolean; onClick: () => void; label: string; count: number }) {
+function TabBtn({ active, onClick, label, count }: { active: boolean; onClick: () => void; label: string; count?: number }) {
   return (
     <button
       onClick={onClick}
@@ -224,7 +229,7 @@ function TabBtn({ active, onClick, label, count }: { active: boolean; onClick: (
       }`}
     >
       {label}
-      <span className={`ml-1 text-xs ${active ? "text-primary-foreground/70" : "text-muted-foreground/60"}`}>{count}</span>
+      {count !== undefined && <span className={`ml-1 text-xs ${active ? "text-primary-foreground/70" : "text-muted-foreground/60"}`}>{count}</span>}
     </button>
   );
 }

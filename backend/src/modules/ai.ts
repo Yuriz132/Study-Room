@@ -377,3 +377,72 @@ function parseWordsJson(text: string): { words: Array<{ word: string; phonetic?:
   }
   return { words, notes: words.length ? '已尝试行式解析' : '未能从模型输出中解析出单词' }
 }
+
+// ============================================
+// Mimo 学习助手代理（持有 MIMO_API_KEY，避免泄露到前端）
+// 转发至 https://api.xiaomimimo.com/v1 (OpenAI 兼容协议)
+// 模型：mimo-v2.5
+// ============================================
+const MIMO_BASE = process.env.MIMO_BASE_URL || 'https://api.xiaomimimo.com/v1'
+const MIMO_API_KEY = process.env.MIMO_API_KEY || ''
+const MIMO_MODEL = process.env.MIMO_MODEL || 'mimo-v2.5'
+
+const mimoSchema = z.object({
+  messages: z.array(
+    z.object({
+      role: z.enum(['system', 'user', 'assistant']),
+      content: z.string().min(1).max(20000),
+    })
+  ).min(1).max(40),
+  max_tokens: z.number().int().min(1).max(4096).optional(),
+  temperature: z.number().min(0).max(2).optional(),
+})
+
+aiRouter.post('/ai/mimo', async (req: Request, res: Response) => {
+  if (!MIMO_API_KEY) {
+    return res.status(503).json({ message: 'AI 服务未配置（MIMO_API_KEY 缺失）' })
+  }
+  const parsed = mimoSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ message: parsed.error.issues[0]?.message ?? '参数错误' })
+  }
+  const { messages, max_tokens, temperature } = parsed.data
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 90_000)
+  try {
+    const r = await fetch(MIMO_BASE + '/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + MIMO_API_KEY,
+      },
+      body: JSON.stringify({
+        model: MIMO_MODEL,
+        messages,
+        max_tokens: max_tokens || 2048,
+        temperature: temperature ?? 0.8,
+      }),
+      signal: controller.signal,
+    })
+    if (!r.ok) {
+      const txt = await r.text().catch(() => '')
+      return res.status(r.status >= 500 ? 502 : r.status).json({
+        message: 'Mimo 服务错误：' + r.status,
+        detail: txt.slice(0, 300),
+      })
+    }
+    const data: any = await r.json()
+    const content: string = data?.choices?.[0]?.message?.content || ''
+    if (!content || !content.trim()) {
+      return res.status(502).json({ message: 'AI 返回内容为空，请重试' })
+    }
+    return res.json({ content, model: data?.model || MIMO_MODEL })
+  } catch (e: any) {
+    const name = e?.name
+    const msg = name === 'AbortError' ? 'AI 请求超时' : (e?.message || 'AI 服务连接失败')
+    return res.status(502).json({ message: msg })
+  } finally {
+    clearTimeout(timer)
+  }
+})
+
