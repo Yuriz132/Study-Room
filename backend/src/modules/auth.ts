@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from 'express'
-import { randomBytes, scryptSync, timingSafeEqual } from 'crypto'
+import { randomBytes, scryptSync, timingSafeEqual, createHmac } from 'crypto'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { z } from 'zod'
@@ -286,20 +286,37 @@ const progressSchema = z
     }
   )
 
-const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
-async function verifyTurnstile(token?: string): Promise<boolean> {
-  if (!TURNSTILE_SECRET) return true // 未配置密钥则不强制人机验证
-  if (!token) return false
+const GEETEST_CAPTCHA_ID = process.env.GEETEST_CAPTCHA_ID || ''
+const GEETEST_CAPTCHA_KEY = process.env.GEETEST_CAPTCHA_KEY || ''
+const GEETEST_API = 'http://gcaptcha4.geetest.com/validate'
+
+async function verifyGeetest(params?: { lot_number?: string; captcha_output?: string; pass_token?: string; gen_time?: string }): Promise<boolean> {
+  // 未配置密钥则不强制人机验证
+  if (!GEETEST_CAPTCHA_ID || !GEETEST_CAPTCHA_KEY) return true
+  if (!params?.lot_number || !params?.captcha_output || !params?.pass_token || !params?.gen_time) {
+    return false
+  }
+  // 生成签名：HMAC-SHA256(lot_number, captcha_key)
+  const sign_token = createHmac('sha256', GEETEST_CAPTCHA_KEY).update(params.lot_number).digest('hex')
   try {
-    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    const body = new URLSearchParams({
+      lot_number: params.lot_number,
+      captcha_output: params.captcha_output,
+      pass_token: params.pass_token,
+      gen_time: params.gen_time,
+      sign_token,
+    })
+    const r = await fetch(`${GEETEST_API}?captcha_id=${GEETEST_CAPTCHA_ID}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ secret: TURNSTILE_SECRET, response: token }),
+      body: body.toString(),
+      signal: AbortSignal.timeout(5000),
     })
+    if (!r.ok) return true // 容灾：极验服务异常时放行，不阻塞用户
     const j: any = await r.json()
-    return !!j?.success
+    return j?.result === 'success'
   } catch {
-    return false
+    return true // 容灾：网络异常时放行，不阻塞用户
   }
 }
 
@@ -316,11 +333,11 @@ authRouter.post('/auth/register', ipGuardRegister, async (req: Request, res: Res
   // 蜜罐：机器人常无差别填全字段；正常用户不会填此隐藏项
   const hp = (req.body as any)?.hp
   if (hp) return res.status(400).json({ message: '注册失败，请稍后再试' })
-  // Turnstile 人机验证（未配置密钥时跳过，不强制）
-  const turnstileToken = (req.body as any)?.cfTurnstileResponse
-  if (!(await verifyTurnstile(turnstileToken))) {
-    return res.status(TURNSTILE_SECRET ? 403 : 400).json({
-      message: TURNSTILE_SECRET ? '请先完成人机验证' : '注册失败，请稍后再试',
+  // 极验行为验证（未配置密钥时跳过，不强制）
+  const geetestParams = (req.body as any)?.geetest
+  if (!(await verifyGeetest(geetestParams))) {
+    return res.status(GEETEST_CAPTCHA_ID ? 403 : 400).json({
+      message: GEETEST_CAPTCHA_ID ? '请先完成人机验证' : '注册失败，请稍后再试',
     })
   }
 

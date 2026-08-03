@@ -143,7 +143,7 @@ interface AuthContextValue {
   isAuthed: boolean
   isAdmin: boolean
   login: (username: string, password: string) => Promise<void>
-  register: (username: string, password: string, extra?: { hp?: string; cfTurnstileResponse?: string }) => Promise<void>
+  register: (username: string, password: string, extra?: { hp?: string; geetest?: { lot_number: string; captcha_output: string; pass_token: string; gen_time: string } }) => Promise<void>
   /** 本地游客模式：仅本机，不调用后端、不写 token */
   loginLocal: (name: string) => void
   logout: () => void
@@ -214,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = window.location.pathname.startsWith('/vs') ? '/vs/' : '/'
   }
 
-  const register = async (username: string, password: string, extra?: { hp?: string; cfTurnstileResponse?: string }) => {
+  const register = async (username: string, password: string, extra?: { hp?: string; geetest?: { lot_number: string; captcha_output: string; pass_token: string; gen_time: string } }) => {
     const res = await apiRegister(username, password, extra)
     localStorage.setItem(TOKEN_KEY, res.token)
     localStorage.setItem(USER_KEY, res.username)

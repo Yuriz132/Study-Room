@@ -11,54 +11,50 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const turnstileRef = useRef<string | null>(null);
-  const [turnstileReady, setTurnstileReady] = useState(false);
-  // Turnstile site key from Vite env (statically replaced at build time)
-  const turnstileSiteKey: string | undefined = (() => {
-    try { const k = import.meta.env.VITE_TURNSTILE_SITEKEY as string | undefined; return k || undefined; }
+  const geetestResult = useRef<{ lot_number: string; captcha_output: string; pass_token: string; gen_time: string } | null>(null);
+  const captchaObjRef = useRef<any>(null);
+  // 极验 captcha ID from Vite env (statically replaced at build time)
+  const geetestCaptchaId: string | undefined = (() => {
+    try { const k = import.meta.env.VITE_GEETEST_CAPTCHA_ID as string | undefined; return k || undefined; }
     catch { return undefined; }
   })();
 
-  // Load Turnstile script + widget
+  // Load 极验 Geetest v4 行为验证
   useEffect(() => {
-    if (!turnstileSiteKey) return;
-    // Inject script tag
-    if (!document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) {
-      const s = document.createElement('script');
-      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-      s.async = true;
-      s.defer = true;
-      document.head.appendChild(s);
-    }
-    (window as any).onTurnstileVerify = (token: string) => {
-      turnstileRef.current = token;
+    if (!geetestCaptchaId) return;
+    // 防止重复加载
+    if (document.querySelector('script[src*="static.geetest.com/v4/gt4.js"]')) return;
+    const s = document.createElement('script');
+    s.src = 'https://static.geetest.com/v4/gt4.js';
+    s.async = true;
+    s.onload = () => {
+      if (!(window as any).initGeetest4) return;
+      (window as any).initGeetest4({
+        captchaId: geetestCaptchaId,
+        product: 'popup',
+        language: 'zho',
+      }, (captchaObj: any) => {
+        captchaObjRef.current = captchaObj;
+        captchaObj.appendTo('#geetest-widget');
+        captchaObj.onReady(() => {
+          // 验证码就绪
+        }).onSuccess(() => {
+          const result = captchaObj.getValidate();
+          if (result) geetestResult.current = result;
+        }).onError((err: any) => {
+          console.error('Geetest error:', err?.msg || err);
+        });
+      });
     };
-    (window as any).onTurnstileExpire = () => {
-      turnstileRef.current = null;
-    };
-    const id = setTimeout(() => {
-      // Render widget after a tick so the DOM container exists
-      if ((window as any).turnstile) {
-        const el = document.getElementById('turnstile-widget');
-        if (el) (window as any).turnstile.render(el, { sitekey: turnstileSiteKey, callback: 'onTurnstileVerify', 'expired-callback': 'onTurnstileExpire' });
-      } else {
-        // Script still loading — poll
-        const check = setInterval(() => {
-          if ((window as any).turnstile) {
-            clearInterval(check);
-            const el = document.getElementById('turnstile-widget');
-            if (el) (window as any).turnstile.render(el, { sitekey: turnstileSiteKey, callback: 'onTurnstileVerify', 'expired-callback': 'onTurnstileExpire' });
-          }
-        }, 300);
-      }
-      setTurnstileReady(true);
-    }, 200);
+    document.head.appendChild(s);
     return () => {
-      clearTimeout(id);
-      delete (window as any).onTurnstileVerify;
-      delete (window as any).onTurnstileExpire;
+      if (captchaObjRef.current) {
+        try { captchaObjRef.current.destroy(); } catch {}
+        captchaObjRef.current = null;
+      }
+      geetestResult.current = null;
     };
-  }, [turnstileSiteKey]);
+  }, [geetestCaptchaId]);
   const [agreed, setAgreed] = useState(false);
   const agreementRef = useRef<HTMLDivElement>(null);
 
@@ -78,7 +74,8 @@ export default function Login() {
       if (mode === "login") await login(name, password);
       else {
         const hpVal = ((e.target as HTMLFormElement).elements.namedItem('hp') as HTMLInputElement)?.value || '';
-        await register(name, password, { hp: hpVal, cfTurnstileResponse: turnstileRef.current ?? undefined });
+        if (geetestCaptchaId && !geetestResult.current) { setError('请先完成人机验证'); setBusy(false); return; }
+        await register(name, password, { hp: hpVal, geetest: geetestResult.current ?? undefined });
       }
     } catch (err: unknown) {
       const msg =
@@ -152,11 +149,10 @@ export default function Login() {
               aria-hidden="true"
             />
 
-            {/* Turnstile captcha — only shown during registration when site key is set */}
-            {mode === 'register' && turnstileSiteKey && (
+            {/* 极验行为验证 — 注册时展示（未配置 captcha ID 则隐藏） */}
+            {mode === 'register' && geetestCaptchaId && (
               <div className="flex justify-center py-1">
-                <div id="turnstile-widget" />
-                {!turnstileReady && <div className="h-[65px] w-[300px] animate-pulse rounded bg-muted/20" />}
+                <div id="geetest-widget" />
               </div>
             )}
 
