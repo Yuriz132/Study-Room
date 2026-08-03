@@ -447,6 +447,10 @@ location /vs/socket.io/ { proxy_pass http://127.0.0.1:3000/socket.io/; /* + Upgr
 
 ---
 
+## 🔒 安全
+
+安全架构、部署安全建议（强制 HTTPS、密钥管理、最小权限运行、SSH 加固）与漏洞负责任披露方式，请见 [SECURITY.md](./SECURITY.md)。
+
 ## 📄 许可证
 
 [MIT](./LICENSE) © 2026 Study Room
