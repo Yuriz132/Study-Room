@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, LogOut, Upload, Trash2, AlertCircle } from "lucide-react";
+import { User, LogOut, Upload, Trash2, AlertCircle, Pencil } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { compressAvatar } from "@/context/SettingsContext";
 import { cn } from "@/lib/utils";
@@ -8,12 +8,15 @@ import { FlyIn } from "@/components/MotionPrimitives";
 import TopBar from "@/components/TopBar";
 
 export default function Account() {
-  const { user, isAuthed, logout, avatar, avatarBanned, setUserAvatar, removeUserAvatar } = useAuth();
+  const { user, isAuthed, logout, avatar, avatarBanned, signature, updateSignature, setUserAvatar, removeUserAvatar } = useAuth();
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
   const hasCloud = !!token;
+  const [sigEditing, setSigEditing] = useState(false);
+  const [sigDraft, setSigDraft] = useState("");
+  const [sigSaving, setSigSaving] = useState(false);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -31,6 +34,15 @@ export default function Account() {
     try { setSaving(true); await removeUserAvatar(); }
     catch { alert("移除头像失败"); }
     finally { setSaving(false); }
+  };
+
+  const saveSig = async () => {
+    try {
+      setSigSaving(true);
+      await updateSignature(sigDraft);
+      setSigEditing(false);
+    } catch { alert("保存失败，请重试"); }
+    finally { setSigSaving(false); }
   };
 
   if (!isAuthed) {
@@ -121,6 +133,26 @@ export default function Account() {
           )}
         </div>
 
+        {/* 个性签名 */}
+        <div className="rounded-2xl border g-border bg-card p-5">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground">个性签名</h3>
+            <button
+              onClick={() => { setSigDraft(signature ?? ""); setSigEditing(true); }}
+              className="inline-flex items-center gap-1 rounded-lg g-panel px-2.5 py-1.5 text-xs text-foreground transition hover:bg-muted/40"
+            >
+              <Pencil className="h-3.5 w-3.5" /> 编辑
+            </button>
+          </div>
+          <p className="mt-2 break-words text-sm leading-relaxed text-foreground/80">
+            {signature ? (
+              signature
+            ) : (
+              <span className="text-muted-foreground/60">还没有签名，点「编辑」写一句话介绍自己（≤80 字）</span>
+            )}
+          </p>
+        </div>
+
         {/* 退出登录 */}
         <button
           onClick={() => { logout(); navigate("/"); }}
@@ -128,6 +160,30 @@ export default function Account() {
         >
           <LogOut className="h-4 w-4" /> 退出登录
         </button>
+
+        {/* 编辑签名弹窗 */}
+        {sigEditing && (
+          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-4" onClick={() => setSigEditing(false)}>
+            <div className="w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <h3 className="mb-3 text-base font-semibold text-foreground">编辑个性签名</h3>
+              <textarea
+                value={sigDraft}
+                maxLength={80}
+                onChange={(e) => setSigDraft(e.target.value)}
+                rows={3}
+                placeholder="一句话介绍自己（≤80 字）"
+                className="w-full resize-none rounded-xl g-border bg-transparent p-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <div className="mt-1 text-right text-[11px] text-muted-foreground/60">{sigDraft.length}/80</div>
+              <div className="mt-3 flex gap-2">
+                <button onClick={() => setSigEditing(false)} className="flex-1 rounded-xl g-border g-panel py-2.5 text-sm text-muted-foreground">取消</button>
+                <button onClick={saveSig} disabled={sigSaving} className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60">
+                  {sigSaving ? "保存中…" : "保存"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </FlyIn>
     </div>
   );
