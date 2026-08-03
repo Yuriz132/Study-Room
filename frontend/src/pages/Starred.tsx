@@ -52,8 +52,14 @@ export default function Starred() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   })();
   const alreadyToday = checkinDates.includes(todayStr);
+  // 签到窗口：每天仅 6:30 - 7:00 开放（本地时间）
+  const inWindow = (() => {
+    const n = new Date();
+    const mins = n.getHours() * 60 + n.getMinutes();
+    return mins >= 6 * 60 + 30 && mins <= 7 * 60;
+  })();
   const doCheckin = () => {
-    if (alreadyToday) return;
+    if (alreadyToday || !inWindow) return;
     const next = [...checkinDates, todayStr];
     try { localStorage.setItem("hv_checkin_dates", JSON.stringify(next)); } catch { /* noop */ }
     setCheckinDates(next);
@@ -79,6 +85,7 @@ export default function Starred() {
         <Gift className="h-5 w-5" />
         签到领会员
         <span className="ml-1 rounded-full bg-white/25 px-2 py-0.5 text-[11px] font-semibold">连续 {consecutive}/7 天</span>
+        <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-medium">每日 6:30-7:00</span>
       </button>
 
       <h1 className="text-xl font-bold text-foreground">收藏</h1>
@@ -289,7 +296,7 @@ export default function Starred() {
             </div>
 
             <p className="mt-3 text-sm leading-relaxed text-foreground/85">
-              用户签到满 <span className="font-bold text-primary">7 天</span> 即可找我领取以下其中一份会员权益（<span className="font-bold text-rose-500">名额仅限 1 份，最先完成签到者优先</span>）：
+              用户签到满 <span className="font-bold text-primary">7 天</span> 即可找我领取以下其中一份会员权益（<span className="font-bold text-rose-500">名额仅限 1 份，最早签满 7 天者优先领取</span>）：
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -300,9 +307,15 @@ export default function Starred() {
               ))}
             </div>
 
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <CalendarCheck className="h-4 w-4 text-emerald-400" />
-              活动 8 月 5 号 开始
+            <div className="mt-3 flex flex-col gap-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <CalendarCheck className="h-4 w-4 text-emerald-400" />
+                活动 8 月 5 号 开始
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CalendarCheck className="h-4 w-4 text-sky-400" />
+                每日签到时段：早上 6:30 - 7:00（仅此 30 分钟开放，督促早起背诵）
+              </div>
             </div>
 
             <div className="mt-4 flex items-center justify-between rounded-2xl bg-muted/30 px-4 py-3">
@@ -312,10 +325,10 @@ export default function Starred() {
               </div>
               <button
                 onClick={doCheckin}
-                disabled={alreadyToday}
-                className={"rounded-xl px-4 py-2 text-sm font-medium text-white transition active:scale-95 " + (alreadyToday ? "bg-muted-foreground/40" : "bg-primary")}
+                disabled={alreadyToday || !inWindow}
+                className={"rounded-xl px-4 py-2 text-sm font-medium text-white transition active:scale-95 " + (alreadyToday || !inWindow ? "bg-muted-foreground/40" : "bg-primary")}
               >
-                {alreadyToday ? "今日已签到 ✓" : "今日签到"}
+                {alreadyToday ? "今日已签到 ✓" : !inWindow ? "6:30-7:00 开放" : "今日签到"}
               </button>
             </div>
           </div>
