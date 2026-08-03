@@ -33,6 +33,31 @@ function timeAgo(ts: number): string {
   return `${date.getMonth() + 1}月${date.getDate()}日`
 }
 
+/* ---- 自动识别文本中的链接并渲染为可点击蓝字 ---- */
+function AutoLinkText({ text }: { text: string }) {
+  const segments = text.split(/(https?:\/\/[^\s]+)/g)
+  return (
+    <>
+      {segments.map((seg, i) =>
+        /^https?:\/\//.test(seg) ? (
+          <a
+            key={i}
+            href={seg}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-all text-blue-600 hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {seg}
+          </a>
+        ) : (
+          <span key={i}>{seg}</span>
+        )
+      )}
+    </>
+  )
+}
+
 /* ---- 社区 5 大板块（网格视图入口）---- */
 const FORUM_MODULES = [
   { key: 'all', label: '全部帖子', icon: LayoutGrid, desc: '社区里的所有帖子' },
@@ -390,7 +415,9 @@ function ForumPostRow({ post, onClick }: { post: ForumPost; onClick: () => void 
         )}
       </div>
       {post.content && (
-        <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-foreground/65">{post.content}</p>
+        <p className="mt-1 line-clamp-2 break-words text-[12px] leading-relaxed text-foreground/65">
+          <AutoLinkText text={post.content} />
+        </p>
       )}
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[10px] text-muted-foreground/60">
@@ -592,7 +619,9 @@ function ForumPostDetail({ post, onBack, onDelete, isAuthed, user, isAdmin }: {
           </span>
         )}
         {current.title && <h1 className="text-lg font-bold text-foreground">{current.title}</h1>}
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">{current.content}</p>
+        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/80">
+          <AutoLinkText text={current.content} />
+        </p>
         {current.images && current.images.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             {current.images.map((img, i) => (
