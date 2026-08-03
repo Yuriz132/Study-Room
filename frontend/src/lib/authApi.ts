@@ -55,8 +55,8 @@ export async function apiLogin(username: string, password: string): Promise<Auth
   return data
 }
 
-export async function apiRegister(username: string, password: string): Promise<AuthResult> {
-  const { data } = await apiClient.post<AuthResult>('/auth/register', { username, password })
+export async function apiRegister(username: string, password: string, extra?: { hp?: string; cfTurnstileResponse?: string }): Promise<AuthResult> {
+  const { data } = await apiClient.post<AuthResult>('/auth/register', { username, password, ...(extra ?? {}) })
   return data
 }
 

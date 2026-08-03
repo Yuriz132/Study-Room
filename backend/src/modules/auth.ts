@@ -4,6 +4,7 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { z } from 'zod'
 import { recordLearningActivity } from './leaderboard'
+import { ipGuardRegister, ipGuardLogin, recordRegistration } from './ipGuard'
 
 // ============================================
 // 账户 + 云端学习进度模块
@@ -285,15 +286,44 @@ const progressSchema = z
     }
   )
 
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
+async function verifyTurnstile(token?: string): Promise<boolean> {
+  if (!TURNSTILE_SECRET) return true // 未配置密钥则不强制人机验证
+  if (!token) return false
+  try {
+    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ secret: TURNSTILE_SECRET, response: token }),
+    })
+    const j: any = await r.json()
+    return !!j?.success
+  } catch {
+    return false
+  }
+}
+
 export const authRouter: Router = Router()
 
 // 注册：仅记录账号密码
-authRouter.post('/auth/register', async (req: Request, res: Response) => {
+authRouter.post('/auth/register', ipGuardRegister, async (req: Request, res: Response) => {
   const parsed = credentialsSchema.safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({ message: parsed.error.issues[0]?.message ?? '参数错误' })
   }
   const { username, password } = parsed.data
+
+  // 蜜罐：机器人常无差别填全字段；正常用户不会填此隐藏项
+  const hp = (req.body as any)?.hp
+  if (hp) return res.status(400).json({ message: '注册失败，请稍后再试' })
+  // Turnstile 人机验证（未配置密钥时跳过，不强制）
+  const turnstileToken = (req.body as any)?.cfTurnstileResponse
+  if (!(await verifyTurnstile(turnstileToken))) {
+    return res.status(TURNSTILE_SECRET ? 403 : 400).json({
+      message: TURNSTILE_SECRET ? '请先完成人机验证' : '注册失败，请稍后再试',
+    })
+  }
+
   const users = await loadUsers()
   if (users.some((u) => u.username === username)) {
     return res.status(409).json({ message: '该用户名已被注册' })
@@ -309,11 +339,12 @@ authRouter.post('/auth/register', async (req: Request, res: Response) => {
   }
   users.push(user)
   await saveUsers(users)
+  recordRegistration(req)
   return res.status(201).json(publicUser(user))
 })
 
 // 登录
-authRouter.post('/auth/login', async (req: Request, res: Response) => {
+authRouter.post('/auth/login', ipGuardLogin, async (req: Request, res: Response) => {
   const parsed = credentialsSchema.safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({ message: parsed.error.issues[0]?.message ?? '参数错误' })

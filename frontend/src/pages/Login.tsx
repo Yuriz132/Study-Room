@@ -1,4 +1,4 @@
-import { useState, useRef, type FormEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
 import { User, Lock, Smartphone } from "lucide-react";
 import { ExplodeIn, FlyIn } from "@/components/MotionPrimitives";
 import { useAuth } from "@/context/AuthContext";
@@ -11,6 +11,54 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const turnstileRef = useRef<string | null>(null);
+  const [turnstileReady, setTurnstileReady] = useState(false);
+  // Turnstile site key from Vite env (statically replaced at build time)
+  const turnstileSiteKey: string | undefined = (() => {
+    try { const k = import.meta.env.VITE_TURNSTILE_SITEKEY as string | undefined; return k || undefined; }
+    catch { return undefined; }
+  })();
+
+  // Load Turnstile script + widget
+  useEffect(() => {
+    if (!turnstileSiteKey) return;
+    // Inject script tag
+    if (!document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) {
+      const s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      s.async = true;
+      s.defer = true;
+      document.head.appendChild(s);
+    }
+    (window as any).onTurnstileVerify = (token: string) => {
+      turnstileRef.current = token;
+    };
+    (window as any).onTurnstileExpire = () => {
+      turnstileRef.current = null;
+    };
+    const id = setTimeout(() => {
+      // Render widget after a tick so the DOM container exists
+      if ((window as any).turnstile) {
+        const el = document.getElementById('turnstile-widget');
+        if (el) (window as any).turnstile.render(el, { sitekey: turnstileSiteKey, callback: 'onTurnstileVerify', 'expired-callback': 'onTurnstileExpire' });
+      } else {
+        // Script still loading — poll
+        const check = setInterval(() => {
+          if ((window as any).turnstile) {
+            clearInterval(check);
+            const el = document.getElementById('turnstile-widget');
+            if (el) (window as any).turnstile.render(el, { sitekey: turnstileSiteKey, callback: 'onTurnstileVerify', 'expired-callback': 'onTurnstileExpire' });
+          }
+        }, 300);
+      }
+      setTurnstileReady(true);
+    }, 200);
+    return () => {
+      clearTimeout(id);
+      delete (window as any).onTurnstileVerify;
+      delete (window as any).onTurnstileExpire;
+    };
+  }, [turnstileSiteKey]);
   const [agreed, setAgreed] = useState(false);
   const agreementRef = useRef<HTMLDivElement>(null);
 
@@ -28,7 +76,10 @@ export default function Login() {
     setBusy(true);
     try {
       if (mode === "login") await login(name, password);
-      else await register(name, password);
+      else {
+        const hpVal = ((e.target as HTMLFormElement).elements.namedItem('hp') as HTMLInputElement)?.value || '';
+        await register(name, password, { hp: hpVal, cfTurnstileResponse: turnstileRef.current ?? undefined });
+      }
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
@@ -90,6 +141,24 @@ export default function Login() {
                 className="w-full border-0 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
               />
             </label>
+
+            {/* Honeypot — hidden from real users, filled by bots */}
+            <input
+              name="hp"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              style={{ position: 'absolute', left: '-9999px', opacity: 0 }}
+              aria-hidden="true"
+            />
+
+            {/* Turnstile captcha — only shown during registration when site key is set */}
+            {mode === 'register' && turnstileSiteKey && (
+              <div className="flex justify-center py-1">
+                <div id="turnstile-widget" />
+                {!turnstileReady && <div className="h-[65px] w-[300px] animate-pulse rounded bg-muted/20" />}
+              </div>
+            )}
 
             {error && <p className="text-sm text-red-400">{error}</p>}
 

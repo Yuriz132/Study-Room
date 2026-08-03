@@ -21,6 +21,9 @@ import { forumRouter } from './modules/forum'
 export const createApp = (): Application => {
   const app = express()
 
+  // 信任前置 nginx 反代，使 req.ip 取到真实客户端 IP（用于按 IP 限流/封禁）
+  app.set('trust proxy', 1)
+
   // HTTP request logging
   app.use(httpLogger)
 
