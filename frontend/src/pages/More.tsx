@@ -6,7 +6,7 @@ import { ANIMATION_PRESETS } from "@/components/MotionPrimitives";
 import { Switch } from "@/components/ui/switch";
 import { useSettings, type Theme, type Skin, compressWallpaper } from "@/context/SettingsContext";
 import { useAuth } from "@/context/AuthContext";
-import { apiAdminDeleteUser } from "@/lib/authApi";
+import { apiAdminDeleteUser, apiAdminDeleteUserPosts, apiAdminDeleteUserComments } from "@/lib/authApi";
 import { Leaderboard } from "@/components/Leaderboard";
 
 export default function More() {
@@ -30,6 +30,10 @@ export default function More() {
   const [banMsg, setBanMsg] = useState("");
   const [delUser, setDelUser] = useState("");
   const [delMsg, setDelMsg] = useState("");
+  const [postsUser, setPostsUser] = useState("");
+  const [postsMsg, setPostsMsg] = useState("");
+  const [cmtsUser, setCmtsUser] = useState("");
+  const [cmtsMsg, setCmtsMsg] = useState("");
 
   return (
     <div className="min-h-screen pb-24 pt-6">
@@ -206,6 +210,60 @@ export default function More() {
                 ><Trash2 className="h-3.5 w-3.5" /> 注销</button>
               </div>
               {delMsg && <p className="mt-2 text-xs text-muted-foreground">{delMsg}</p>}
+            </div>
+
+            <div className="mb-4 rounded-2xl border g-border g-panel px-3.5 py-3">
+              <div className="mb-3 flex items-center gap-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500/15">
+                  <Trash2 className="h-4 w-4 text-rose-400" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-foreground">删除用户全部帖子</div>
+                  <div className="text-xs text-muted-foreground/80">输入用户名，删除该用户发布的所有帖子（含其评论与点赞）</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input value={postsUser} onChange={(e) => setPostsUser(e.target.value)}
+                  placeholder="用户名" maxLength={20}
+                  className="flex-1 rounded-xl border g-border g-panel px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50" />
+                <button
+                  onClick={async () => {
+                    const u = postsUser.trim(); if (!u) return;
+                    if (!window.confirm(`确定要删除用户「${u}」的全部帖子吗？`)) return;
+                    try { const r = await apiAdminDeleteUserPosts(u); setPostsMsg(`已删除 ${r.removed} 条帖子`); setPostsUser(''); }
+                    catch { setPostsMsg('操作失败，请确认用户存在且你是管理员'); }
+                  }}
+                  className="flex items-center gap-1 rounded-xl bg-rose-500 px-3 py-2 text-xs font-medium text-white transition hover:bg-rose-600 active:scale-95"
+                ><Trash2 className="h-3.5 w-3.5" /> 删帖</button>
+              </div>
+              {postsMsg && <p className="mt-2 text-xs text-muted-foreground">{postsMsg}</p>}
+            </div>
+
+            <div className="mb-4 rounded-2xl border g-border g-panel px-3.5 py-3">
+              <div className="mb-3 flex items-center gap-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500/15">
+                  <Trash2 className="h-4 w-4 text-rose-400" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-foreground">删除用户全部评论</div>
+                  <div className="text-xs text-muted-foreground/80">输入用户名，删除该用户发表的所有评论（含其回复）</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input value={cmtsUser} onChange={(e) => setCmtsUser(e.target.value)}
+                  placeholder="用户名" maxLength={20}
+                  className="flex-1 rounded-xl border g-border g-panel px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50" />
+                <button
+                  onClick={async () => {
+                    const u = cmtsUser.trim(); if (!u) return;
+                    if (!window.confirm(`确定要删除用户「${u}」的全部评论吗？`)) return;
+                    try { const r = await apiAdminDeleteUserComments(u); setCmtsMsg(`已删除 ${r.removed} 条评论`); setCmtsUser(''); }
+                    catch { setCmtsMsg('操作失败，请确认用户存在且你是管理员'); }
+                  }}
+                  className="flex items-center gap-1 rounded-xl bg-rose-500 px-3 py-2 text-xs font-medium text-white transition hover:bg-rose-600 active:scale-95"
+                ><Trash2 className="h-3.5 w-3.5" /> 删评</button>
+              </div>
+              {cmtsMsg && <p className="mt-2 text-xs text-muted-foreground">{cmtsMsg}</p>}
             </div>
           </>
         )}

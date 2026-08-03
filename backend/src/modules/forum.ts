@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { z } from 'zod'
-import { authMiddleware, loadUsers } from './auth'
+import { authMiddleware, adminMiddleware, loadUsers } from './auth'
 import { loadComments, saveComments } from './comments'
 
 export function postIdToWordId(postId: string): number {
@@ -214,4 +214,28 @@ forumRouter.delete('/forum/posts/:id', authMiddleware, async (req: Request, res:
   const remaining = comments.filter((c) => c.wordId !== wid)
   if (remaining.length !== comments.length) await saveComments(remaining)
   return res.json({ message: '已删除' })
+})
+
+// 管理员：删除某用户发布的全部帖子（含点赞与级联评论）
+forumRouter.delete('/forum/posts/admin/author/:author', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+  const author = decodeURIComponent(String(req.params.author))
+  const all = await loadPosts()
+  const removed = all.filter((p) => p.author === author)
+  const rest = all.filter((p) => p.author !== author)
+  if (rest.length === all.length) {
+    return res.json({ message: '该用户没有帖子', removed: 0 })
+  }
+  await savePosts(rest)
+  const removedIds = new Set(removed.map((p) => p._id))
+  const likes = await loadLikes()
+  let likesChanged = false
+  for (const id of removedIds) {
+    if (id in likes) { delete likes[id]; likesChanged = true }
+  }
+  if (likesChanged) await saveLikes(likes)
+  const comments = await loadComments()
+  const wids = new Set([...removedIds].map((id) => postIdToWordId(id)))
+  const restC = comments.filter((c) => !wids.has(c.wordId))
+  if (restC.length !== comments.length) await saveComments(restC)
+  return res.json({ message: `已删除 ${removed.length} 条帖子及其评论`, removed: removed.length })
 })

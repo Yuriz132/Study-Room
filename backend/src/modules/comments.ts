@@ -412,3 +412,16 @@ commentsRouter.delete('/comments/:id', authMiddleware, async (req: Request, res:
   await saveComments(remaining)
   return res.json({ message: '已删除' })
 })
+
+// 管理员：删除某用户发表的全部评论（含其回复）
+commentsRouter.delete('/comments/admin/author/:author', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+  const author = decodeURIComponent(String(req.params.author))
+  const all = await loadComments()
+  const removedIds = new Set(all.filter((c) => c.author === author).map((c) => c._id))
+  if (removedIds.size === 0) {
+    return res.json({ message: '该用户没有评论', removed: 0 })
+  }
+  const rest = all.filter((c) => !removedIds.has(c._id) && !(c.parentId && removedIds.has(c.parentId)))
+  await saveComments(rest)
+  return res.json({ message: `已删除 ${removedIds.size} 条评论及其回复`, removed: removedIds.size })
+})

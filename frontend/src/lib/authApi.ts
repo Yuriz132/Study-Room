@@ -102,6 +102,18 @@ export async function apiAdminDeleteUser(username: string): Promise<{ ok: boolea
   return data
 }
 
+/** 管理员删除某用户发布的全部帖子（含级联评论） */
+export async function apiAdminDeleteUserPosts(author: string): Promise<{ message: string; removed: number }> {
+  const { data } = await apiClient.delete<{ message: string; removed: number }>(`/forum/posts/admin/author/${encodeURIComponent(author)}`)
+  return data
+}
+
+/** 管理员删除某用户发表的全部评论（含其回复） */
+export async function apiAdminDeleteUserComments(author: string): Promise<{ message: string; removed: number }> {
+  const { data } = await apiClient.delete<{ message: string; removed: number }>(`/comments/admin/author/${encodeURIComponent(author)}`)
+  return data
+}
+
 export async function apiGetProgress(): Promise<CloudProgress> {
   const { data } = await apiClient.get<CloudProgress>('/progress')
   return data
