@@ -137,7 +137,7 @@ export default function Battle() {
               <div className="text-[10px] text-muted-foreground">
                 第 {pk.question.round} / {pk.question.total} 回合
               </div>
-              <div className="text-xs text-foreground">{pk.opponent}</div>
+              <button onClick={() => navigate('/user/' + encodeURIComponent(pk.opponent))} className="text-xs text-foreground hover:underline">{pk.opponent}</button>
             </div>
             <div className="text-right">
               <div className="text-[10px] text-muted-foreground">对手</div>
@@ -218,7 +218,7 @@ export default function Battle() {
             </div>
             <span className="text-muted-foreground">VS</span>
             <div>
-              <div className="text-[10px] text-muted-foreground">{pk.opponent}</div>
+              <button onClick={() => navigate('/user/' + encodeURIComponent(pk.opponent))} className="text-[10px] text-muted-foreground hover:underline">{pk.opponent}</button>
               <div className="font-mono text-2xl font-bold text-rose-400">
                 {pk.result?.scores[pk.youAre === 'A' ? 'B' : 'A'] ?? pk.scores[pk.youAre === 'A' ? 'B' : 'A']}
               </div>

@@ -11,11 +11,12 @@ import {
 } from '@/lib/authApi'
 import { getErrorMessage } from '@/lib/api-client'
 
-function LetterAvatar({ name, size = 40 }: { name: string; size?: number }) {
+function LetterAvatar({ name, size = 40, onClick }: { name: string; size?: number; onClick?: () => void }) {
   return (
     <span
-      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-primary"
+      className={"inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-primary" + (onClick ? " cursor-pointer" : "")}
       style={{ width: size, height: size, fontSize: size * 0.4 }}
+      onClick={onClick}
     >
       {name ? name[0] : '?'}
     </span>
@@ -122,7 +123,7 @@ export default function FriendsPage() {
           const isOutgoing = rel?.outgoing.includes(found.username)
           return (
             <div className="mt-3 flex items-center gap-3 rounded-xl g-border g-panel p-3">
-              <LetterAvatar name={found.username} />
+              <LetterAvatar name={found.username} onClick={() => navigate('/user/' + encodeURIComponent(found.username))} />
               <span className="flex-1 truncate text-sm font-medium text-foreground">{found.username}</span>
               {isFriend ? (
                 <span className="text-xs text-muted-foreground">已是好友</span>
@@ -156,7 +157,7 @@ export default function FriendsPage() {
                 {rel.incoming.map((name) => (
                   <div key={name} className="flex items-center gap-3 rounded-2xl g-border g-panel p-3">
                     <span className="relative inline-flex shrink-0">
-                      <LetterAvatar name={name} />
+                      <LetterAvatar name={name} onClick={() => navigate('/user/' + encodeURIComponent(name))} />
                       <span className={cn('absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-card', isOnline(name) ? 'bg-emerald-500' : 'bg-muted-foreground/40')} />
                     </span>
                     <button onClick={() => navigate('/user/' + encodeURIComponent(name))} className="flex-1 truncate text-left text-sm font-medium text-foreground hover:underline">{name}</button>
@@ -184,7 +185,7 @@ export default function FriendsPage() {
                 <div key={name} className="flex items-center gap-3 rounded-2xl g-border g-panel p-3">
                   <button onClick={() => navigate('/dm/' + encodeURIComponent(name))} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                     <span className="relative inline-flex shrink-0">
-                      <LetterAvatar name={name} />
+                      <LetterAvatar name={name} onClick={() => navigate('/user/' + encodeURIComponent(name))} />
                       <span className={cn('absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-card', isOnline(name) ? 'bg-emerald-500' : 'bg-muted-foreground/40')} />
                     </span>
                     <span className="relative truncate text-sm font-medium text-foreground">

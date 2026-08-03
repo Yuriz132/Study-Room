@@ -108,12 +108,13 @@ function NavBar() {
                   }
                 />
               )}
+              {/* 红点：放在 NavLink 内层（h-11 w-11 有固定尺寸），确保 -right/-top 偏移正确 */}
+              {n.to === '/friends' && has && (
+                <span className="absolute right-0 top-0 h-2.5 w-2.5 translate-x-[2px] -translate-y-[2px] rounded-full bg-rose-500 ring-2 ring-[var(--glass-nav)]" />
+              )}
               {/* 图标：固定槽位内交叉淡入淡出，旧图标淡出、新图标淡入。
                   reduced-motion 下直接渲染静态图标，避免割裂。 */}
               <span className="relative z-10 flex items-center justify-center">
-                {n.to === '/friends' && has && (
-                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-[var(--glass-nav)]" />
-                )}
                 {reduceMotion ? (
                   <Icon className={"h-5 w-5 " + (isActive ? "text-primary-foreground" : "text-muted-foreground")} />
                 ) : (

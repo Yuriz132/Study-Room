@@ -53,7 +53,7 @@ export default function Dm() {
         <button onClick={() => navigate('/friends')} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:g-panel hover:text-foreground active:scale-90" aria-label="返回">
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <span className="text-sm font-semibold text-foreground">💬 {username}</span>
+        <button onClick={() => navigate('/user/' + encodeURIComponent(username))} className="text-sm font-semibold text-foreground hover:underline">💬 {username}</button>
         <div className="ml-auto flex items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1">
           <span className={cn('h-2 w-2 rounded-full', connected ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]' : 'bg-gray-400')} />
           <span className="text-[11px] tabular-nums text-muted-foreground">{connected ? '在线' : '连接中'}</span>

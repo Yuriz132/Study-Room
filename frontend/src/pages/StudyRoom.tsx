@@ -83,7 +83,7 @@ export default function StudyRoomPage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="min-w-0">
-          <h1 className="truncate text-lg font-bold text-foreground">和 {friend} 一起学</h1>
+          <h1 className="truncate text-lg font-bold text-foreground">和 <button onClick={() => navigate('/user/' + encodeURIComponent(friend))} className="hover:underline">{friend}</button> 一起学</h1>
           <p className="text-[11px] text-muted-foreground/70">
             {joined ? (peerOnline ? '对方在线，进度实时同步' : (friendOnline ? '对方在线，等待进入学习房…' : '对方当前不在线，可留言邀请')) : '正在进入学习房…'}
           </p>
