@@ -15,6 +15,7 @@ interface ChatMessage {
   avatar: string | null
   text: string
   timestamp: number
+  sysKind?: 'welcome' | 'leave'
 }
 
 const MAX_HISTORY = 100
@@ -60,17 +61,7 @@ export function registerChat(io: Server): void {
       // 发送历史消息
       socket.emit('chat:history', messages.slice(-50))
 
-      // 系统消息：加入
-      const joinMsg: ChatMessage = {
-        id: genId(),
-        type: 'system',
-        username,
-        avatar,
-        text: `${username} 加入了聊天室`,
-        timestamp: Date.now(),
-      }
-      addMessage(joinMsg)
-      io.emit('chat:message', joinMsg)
+      // 加入时不再广播「X 加入了聊天室」——已有单独的欢迎须知
       broadcastOnlineCount(io)
 
       // 向加入者单独推送欢迎须知（多行 system 消息，前端 whitespace-pre-line 渲染）
@@ -89,6 +80,7 @@ export function registerChat(io: Server): void {
         avatar,
         text: welcomeText,
         timestamp: Date.now(),
+        sysKind: 'welcome',
       }
       socket.emit('chat:message', welcomeMsg)
     })
@@ -125,6 +117,7 @@ export function registerChat(io: Server): void {
           avatar: u.avatar,
           text: `${u.username} 离开了聊天室`,
           timestamp: Date.now(),
+          sysKind: 'leave',
         }
         addMessage(leaveMsg)
         io.emit('chat:message', leaveMsg)

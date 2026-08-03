@@ -13,6 +13,7 @@ export interface ChatMessage {
   avatar: string | null
   text: string
   timestamp: number
+  sysKind?: 'welcome' | 'leave'
 }
 
 const TOKEN_KEY = 'auth_token'
@@ -24,6 +25,18 @@ export function useChat() {
   const [joined, setJoined] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [onlineCount, setOnlineCount] = useState(0)
+
+  // 欢迎 / 离开类系统消息 60s 后自动消失
+  const expireRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const scheduleExpire = useCallback((msg: ChatMessage) => {
+    if (msg.sysKind !== 'welcome' && msg.sysKind !== 'leave') return
+    const remaining = Math.max(0, 60000 - (Date.now() - msg.timestamp))
+    const t = setTimeout(() => {
+      setMessages((prev) => prev.filter((m) => m.id !== msg.id))
+      expireRef.current.delete(msg.id)
+    }, remaining)
+    expireRef.current.set(msg.id, t)
+  }, [])
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -49,12 +62,14 @@ export function useChat() {
 
     socket.on('chat:history', (msgs: ChatMessage[]) => {
       setMessages(msgs)
+      msgs.forEach(scheduleExpire)
       setJoined(true)
       setError(null)
     })
 
     socket.on('chat:message', (msg: ChatMessage) => {
       setMessages((prev) => [...prev, msg])
+      scheduleExpire(msg)
     })
 
     socket.on('chat:online', (count: number) => {
@@ -67,6 +82,8 @@ export function useChat() {
     })
 
     return () => {
+      expireRef.current.forEach((t) => clearTimeout(t))
+      expireRef.current.clear()
       socket.disconnect()
       socketRef.current = null
     }
