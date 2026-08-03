@@ -107,6 +107,8 @@ function buildQuestion(): { meaning: string; phonetic: string; options: string[]
 const humanQueue: Socket[] = []
 const queueTimers = new Map<Socket, NodeJS.Timeout>()
 const socketRoom = new Map<string, Room>()
+// 在线用户 → socket（用于好友定向邀请；同一用户多端以最后连接为准）
+const onlineByUser = new Map<string, Socket>()
 
 function other(side: Side): Side {
   return side === 'A' ? 'B' : 'A'
@@ -357,6 +359,7 @@ export function registerPk(io: Server): void {
     }
     const username = user.username
     socket.data.username = username
+    onlineByUser.set(username, socket)
 
     socket.on('pk:queue', (data: { mode?: 'human' | 'bot' }) => {
       const mode = data && data.mode === 'bot' ? 'bot' : 'human'
@@ -378,7 +381,41 @@ export function registerPk(io: Server): void {
       socket.emit('pk:cancelled')
     })
 
+    // ---------- 好友定向邀请 ----------
+    socket.on('pk:invite', (data: { targetUsername?: string; mode?: string }) => {
+      const target = data?.targetUsername
+      if (!target || target === username) return
+      const targetSock = onlineByUser.get(target)
+      if (!targetSock || !targetSock.connected) {
+        socket.emit('pk:inviteFailed', { target, message: '对方当前不在线' })
+        return
+      }
+      targetSock.emit('pk:inviteReceived', { from: username, mode: data.mode || 'human' })
+      socket.emit('pk:inviteSent', { target })
+    })
+
+    socket.on('pk:acceptInvite', (data: { fromUsername?: string }) => {
+      const from = data?.fromUsername
+      if (!from || from === username) return
+      const fromSock = onlineByUser.get(from)
+      if (!fromSock || !fromSock.connected) {
+        socket.emit('pk:inviteFailed', { target: from, message: '对方已离线，请稍后再试' })
+        return
+      }
+      // 若发起方仍在匹配队列，先移除，避免重复开局
+      dequeue(fromSock)
+      createRoom(io, fromSock, from, socket, username)
+    })
+
+    socket.on('pk:declineInvite', (data: { fromUsername?: string }) => {
+      const from = data?.fromUsername
+      if (!from) return
+      const fromSock = onlineByUser.get(from)
+      if (fromSock && fromSock.connected) fromSock.emit('pk:inviteDeclined', { by: username })
+    })
+
     socket.on('disconnect', () => {
+      if (onlineByUser.get(username) === socket) onlineByUser.delete(username)
       dequeue(socket)
       leaveRoom(socket)
     })

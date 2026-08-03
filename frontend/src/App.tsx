@@ -1,7 +1,9 @@
-import { BrowserRouter, Route, NavLink, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react"
+import { BrowserRouter, Route, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMotionEnabled } from "@/lib/motionPref";
-import { Home, BookOpen, Brain, Star, MessageCircle, MoreHorizontal } from "lucide-react";
+import { getPkSocket, onPk, emitPk } from "@/lib/pkSocket";
+import { Home, BookOpen, Brain, Star, MessageCircle, MoreHorizontal, Users } from "lucide-react";
 import { AuthProvider } from "./context/AuthContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 import Index from "./pages/Index";
@@ -19,6 +21,9 @@ import Login from "./pages/Login";
 import Account from "./pages/Account";
 import More from "./pages/More";
 import Community from "./pages/Community";
+import Friends from "./pages/Friends";
+import User from "./pages/User";
+import StudyRoom from "./pages/StudyRoom";
 import Battle from "./pages/Battle";
 import PublicNotes from "./pages/PublicNotes";
 import ImmersiveLearn from "./components/ImmersiveLearn";
@@ -32,6 +37,7 @@ const navItems = [
   { to: "/search", label: "学习法", icon: Brain },
   { to: "/starred", label: "收藏", icon: Star },
   { to: "/community", label: "社区", icon: MessageCircle },
+  { to: "/friends", label: "好友", icon: Users },
   { to: "/more", label: "更多", icon: MoreHorizontal },
 ];
 
@@ -42,10 +48,14 @@ function NavBar() {
   if (isImmersive) return null;
 
   // 选中项：精确匹配子路由（/browse/:part 等仍高亮「词库」）
+  const friendsIdx = navItems.findIndex((n) => n.to === '/friends')
   const activeIdx = navItems.findIndex((n) =>
     n.to === "/" ? pathname === "/" : pathname === n.to || pathname.startsWith(n.to + "/")
   );
-  const idx = activeIdx >= 0 ? activeIdx : 0;
+  let idx = activeIdx >= 0 ? activeIdx : 0
+  if (activeIdx < 0 && friendsIdx >= 0 && (pathname.startsWith('/user') || pathname.startsWith('/study') || pathname.startsWith('/friends'))) {
+    idx = friendsIdx
+  }
 
   // reduced-motion 系统偏好：保留外壳连续滑动（不跳变），但去掉弹性形变与图标交叉淡入淡出
   const reduceMotion = !motionOn;
@@ -124,6 +134,36 @@ function NavBar() {
   );
 }
 
+
+function PkInviteListener() {
+  const navigate = useNavigate()
+  const [invite, setInvite] = useState<{ from: string; mode: string } | null>(null)
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+  useEffect(() => {
+    if (!token) return
+    getPkSocket(token)
+    const off = onPk('pk:inviteReceived', (d: { from: string; mode: string }) => {
+      setInvite({ from: d.from, mode: d.mode || 'human' })
+    })
+    return off
+  }, [token])
+  if (!invite) return null
+  const from = invite.from
+  const decline = () => { emitPk('pk:declineInvite', { fromUsername: from }); setInvite(null) }
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" onClick={decline}>
+      <div className="w-full max-w-sm rounded-3xl bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-base font-semibold text-foreground">{from} 邀请你单词 PK</h3>
+        <p className="mt-1 text-sm text-muted-foreground">要不要来一局实时对战，比一比谁背得又快又准？</p>
+        <div className="mt-4 flex gap-2">
+          <button onClick={decline} className="flex-1 rounded-xl g-border g-panel py-2.5 text-sm text-muted-foreground">拒绝</button>
+          <button onClick={() => { setInvite(null); navigate('/pk?invite=' + encodeURIComponent(from)) }} className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground">接受</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function GlobalOverlays() {
   const { pomodoroVisible } = useSettings();
   return pomodoroVisible ? <PomodoroTimer /> : null;
@@ -154,6 +194,9 @@ function App() {
                 <Route path="/listen" element={<PageTransition transition="stagger"><Listen /></PageTransition>} />
                 <Route path="/more" element={<PageTransition transition="stagger"><More /></PageTransition>} />
                 <Route path="/community" element={<PageTransition transition="stagger"><Community /></PageTransition>} />
+                <Route path="/friends" element={<PageTransition transition="stagger"><Friends /></PageTransition>} />
+                <Route path="/user/:username" element={<PageTransition transition="stagger"><User /></PageTransition>} />
+                <Route path="/study/:friend" element={<PageTransition transition="stagger"><StudyRoom /></PageTransition>} />
                 <Route path="/public-notes" element={<PageTransition transition="stagger"><PublicNotes /></PageTransition>} />
                 <Route path="/pk" element={<PageTransition transition="stagger"><Battle /></PageTransition>} />
                 <Route path="/login" element={<PageTransition transition="stagger"><Login /></PageTransition>} />
@@ -164,6 +207,7 @@ function App() {
             </main>
             <NavBar />
             <GlobalOverlays />
+            <PkInviteListener />
           </div>
         </BrowserRouter>
       </SettingsProvider>

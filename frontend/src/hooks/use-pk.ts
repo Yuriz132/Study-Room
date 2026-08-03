@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { io, type Socket } from 'socket.io-client'
+import { getPkSocket, onPk, emitPk } from '@/lib/pkSocket'
 
 export type PkPhase = 'idle' | 'queuing' | 'playing' | 'result' | 'error'
 
@@ -34,7 +34,6 @@ interface Reveal {
 }
 
 export function usePk(token: string | null) {
-  const socketRef = useRef<Socket | null>(null)
   const [phase, setPhase] = useState<PkPhase>('idle')
   const [error, setError] = useState<string | null>(null)
   const [opponent, setOpponent] = useState<string>('')
@@ -47,118 +46,78 @@ export function usePk(token: string | null) {
   const [result, setResult] = useState<PkResult | null>(null)
   const [queuePos, setQueuePos] = useState(0)
 
+  const scoresRef = useRef(scores)
+  useEffect(() => { scoresRef.current = scores }, [scores])
+
   useEffect(() => {
     if (!token) return
-    const socketPath = window.location.pathname.startsWith('/vs') ? '/vs/socket.io' : '/socket.io'
-    const socket: Socket = io({
-      path: socketPath,
-      auth: { token },
-      transports: ['websocket', 'polling'],
-    })
-    socketRef.current = socket
-
-    socket.on('pk:queued', (d: { position: number }) => {
-      setPhase('queuing')
-      setQueuePos(d.position)
-    })
-    socket.on('pk:matched', (d: { mode: string; youAre: 'A' | 'B'; opponent: string }) => {
-      setOpponent(d.opponent)
-      setYouAre(d.youAre)
-      setPhase('playing')
-      setReveal(null)
-      setResult(null)
-      setScores({ A: 0, B: 0 })
-    })
-    socket.on('pk:round', (q: PkQuestion) => {
-      setQuestion(q)
-      setAnswered(false)
-      setMyChoice(null)
-      setReveal(null)
-    })
-    socket.on('pk:roundEnd', (d: RoundEnd) => {
-      setScores(d.scores)
-      setReveal({
-        answerIndex: d.answerIndex,
-        youCorrect: d.you.correct,
-        youScore: d.you.score,
-        oppCorrect: d.opponent.correct,
-        oppScore: d.opponent.score,
-      })
-    })
-    socket.on('pk:result', (r: PkResult) => {
-      setResult(r)
-      setPhase('result')
-    })
-    socket.on('pk:timeout', () => {
-      setError('未匹配到对手，稍后再试～')
-      setPhase('idle')
-    })
-    socket.on('pk:opponentLeft', () => {
-      setError('对手已离开，对战结束')
-      setResult({ winner: 'you', scores, youAre })
-      setPhase('result')
-    })
-    socket.on('pk:error', (d: { message: string }) => {
-      setError(d.message)
-      setPhase('error')
-    })
-    socket.on('pk:cancelled', () => {
-      setPhase('idle')
-    })
-
-    return () => {
-      socket.disconnect()
-      socketRef.current = null
-    }
-  }, [token])
+    const sock = getPkSocket(token)
+    if (!sock) return
+    const offs = [
+      onPk('pk:queued', (d: { position: number }) => { setPhase('queuing'); setQueuePos(d.position) }),
+      onPk('pk:matched', (d: { mode: string; youAre: 'A' | 'B'; opponent: string }) => {
+        setOpponent(d.opponent); setYouAre(d.youAre); setPhase('playing')
+        setReveal(null); setResult(null); setScores({ A: 0, B: 0 })
+      }),
+      onPk('pk:round', (q: PkQuestion) => {
+        setQuestion(q); setAnswered(false); setMyChoice(null); setReveal(null)
+      }),
+      onPk('pk:roundEnd', (d: RoundEnd) => {
+        setScores(d.scores)
+        setReveal({
+          answerIndex: d.answerIndex,
+          youCorrect: d.you.correct, youScore: d.you.score,
+          oppCorrect: d.opponent.correct, oppScore: d.opponent.score,
+        })
+      }),
+      onPk('pk:result', (r: PkResult) => { setResult(r); setPhase('result') }),
+      onPk('pk:timeout', () => { setError('未匹配到对手，稍后再试～'); setPhase('idle') }),
+      onPk('pk:opponentLeft', () => {
+        setError('对手已离开，对战结束')
+        setResult({ winner: 'you', scores: scoresRef.current, youAre })
+        setPhase('result')
+      }),
+      onPk('pk:error', (d: { message: string }) => { setError(d.message); setPhase('error') }),
+      onPk('pk:cancelled', () => setPhase('idle')),
+      onPk('pk:inviteFailed', (d: { message?: string }) => setError(d.message || '邀请失败，请稍后再试')),
+      onPk('pk:inviteDeclined', () => { setError('对方拒绝了你的邀请'); setPhase('idle') }),
+    ]
+    return () => offs.forEach((off) => off())
+  }, [token, youAre])
 
   const queue = useCallback((mode: 'human' | 'bot') => {
-    setError(null)
-    setResult(null)
-    setPhase('queuing')
-    socketRef.current?.emit('pk:queue', { mode })
+    setError(null); setResult(null); setPhase('queuing')
+    emitPk('pk:queue', { mode })
   }, [])
 
-  const answer = useCallback(
-    (round: number, choice: number) => {
-      if (answered) return
-      setAnswered(true)
-      setMyChoice(choice)
-      socketRef.current?.emit('pk:answer', { round, choice })
-    },
-    [answered]
-  )
+  const answer = useCallback((round: number, choice: number) => {
+    if (answered) return
+    setAnswered(true); setMyChoice(choice)
+    emitPk('pk:answer', { round, choice })
+  }, [answered])
 
-  const cancel = useCallback(() => {
-    socketRef.current?.emit('pk:cancel')
-    setPhase('idle')
-  }, [])
+  const cancel = useCallback(() => { emitPk('pk:cancel'); setPhase('idle') }, [])
 
   const reset = useCallback(() => {
-    setPhase('idle')
-    setResult(null)
-    setError(null)
-    setQuestion(null)
-    setReveal(null)
-    setMyChoice(null)
-    setScores({ A: 0, B: 0 })
+    setPhase('idle'); setResult(null); setError(null)
+    setQuestion(null); setReveal(null); setMyChoice(null); setScores({ A: 0, B: 0 })
+  }, [])
+
+  const invite = useCallback((targetUsername: string) => {
+    emitPk('pk:invite', { targetUsername, mode: 'human' })
+  }, [])
+
+  const acceptInvite = useCallback((fromUsername: string) => {
+    emitPk('pk:acceptInvite', { fromUsername })
+  }, [])
+
+  const declineInvite = useCallback((fromUsername: string) => {
+    emitPk('pk:declineInvite', { fromUsername })
   }, [])
 
   return {
-    phase,
-    error,
-    opponent,
-    youAre,
-    question,
-    answered,
-    myChoice,
-    scores,
-    reveal,
-    result,
-    queuePos,
-    queue,
-    answer,
-    cancel,
-    reset,
+    phase, error, opponent, youAre, question, answered, myChoice,
+    scores, reveal, result, queuePos,
+    queue, answer, cancel, reset, invite, acceptInvite, declineInvite,
   }
 }

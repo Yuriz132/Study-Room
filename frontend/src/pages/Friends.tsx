@@ -1,0 +1,195 @@
+import { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { UserPlus, Check, X, Swords, BookOpen, Search, Loader2, UserMinus, Users } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import {
+  apiGetFriends, apiFriendRequest, apiFriendAccept, apiFriendReject, apiFriendRemove,
+  apiGetUser, type FriendRelations, type PublicUser,
+} from '@/lib/authApi'
+import { emitPk, getPkSocket } from '@/lib/pkSocket'
+import { getErrorMessage } from '@/lib/api-client'
+
+function LetterAvatar({ name, size = 40 }: { name: string; size?: number }) {
+  return (
+    <span
+      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-primary"
+      style={{ width: size, height: size, fontSize: size * 0.4 }}
+    >
+      {name ? name[0] : '?'}
+    </span>
+  )
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="mb-2 mt-5 px-1 text-sm font-semibold text-foreground">{children}</h2>
+}
+
+export default function FriendsPage() {
+  const navigate = useNavigate()
+  const { user, isAuthed } = useAuth()
+  const [rel, setRel] = useState<FriendRelations | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState('')
+  const [err, setErr] = useState('')
+
+  // 搜索添加
+  const [q, setQ] = useState('')
+  const [found, setFound] = useState<PublicUser | null>(null)
+  const [searchErr, setSearchErr] = useState('')
+  const [searching, setSearching] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const r = await apiGetFriends()
+      setRel(r)
+    } catch (e) { setErr(getErrorMessage(e)) }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { if (isAuthed) load(); else setLoading(false) }, [isAuthed, load])
+
+  const act = async (fn: () => Promise<unknown>, key: string) => {
+    setBusy(key)
+    try { await fn(); await load() } catch (e) { setErr(getErrorMessage(e)) }
+    setBusy('')
+  }
+
+  const doSearch = async () => {
+    const name = q.trim()
+    if (!name) return
+    if (name === user) { setSearchErr('不能添加自己'); return }
+    setSearching(true); setSearchErr(''); setFound(null)
+    try {
+      const p = await apiGetUser(name)
+      setFound(p)
+    } catch (e: any) {
+      if (e?.response?.status === 404) setSearchErr('用户不存在')
+      else setSearchErr(getErrorMessage(e))
+    }
+    setSearching(false)
+  }
+
+  const openStudy = (name: string) => navigate('/study/' + encodeURIComponent(name))
+  const openPk = (name: string) => { getPkSocket(localStorage.getItem('auth_token')); emitPk('pk:invite', { targetUsername: name, mode: 'human' }); navigate('/pk?invited=' + encodeURIComponent(name)) }
+
+  if (!isAuthed) {
+    return (
+      <div className="mx-auto w-full max-w-2xl px-4 pt-10">
+        <div className="liquid-glass rounded-3xl p-8 text-center">
+          <Users className="mx-auto mb-3 h-10 w-10 text-primary" />
+          <h1 className="text-xl font-bold text-foreground">我的好友</h1>
+          <p className="mt-2 text-sm text-muted-foreground">登录后查看好友、互发请求，一起背单词 PK。</p>
+          <button onClick={() => navigate('/login')} className="mt-5 rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground">去登录</button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-2xl px-4 pb-24 pt-6">
+      <header className="mb-2 flex items-center gap-2">
+        <Users className="h-5 w-5 text-primary" />
+        <h1 className="text-lg font-bold text-foreground">我的好友</h1>
+      </header>
+
+      {/* 搜索添加 */}
+      <div className="liquid-glass rounded-2xl p-3">
+        <div className="flex gap-2">
+          <div className="flex flex-1 items-center gap-2 rounded-xl g-border bg-transparent px-3">
+            <Search className="h-4 w-4 text-muted-foreground/60" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && doSearch()}
+              placeholder="输入用户名添加好友"
+              className="flex-1 bg-transparent py-2 text-sm text-foreground outline-none"
+            />
+          </div>
+          <button onClick={doSearch} disabled={searching} className="rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60">
+            {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : '搜索'}
+          </button>
+        </div>
+        {searchErr && <p className="mt-2 px-1 text-xs text-destructive">{searchErr}</p>}
+        {found && (() => {
+          const isFriend = rel?.friends.includes(found.username)
+          const isOutgoing = rel?.outgoing.includes(found.username)
+          return (
+            <div className="mt-3 flex items-center gap-3 rounded-xl g-border g-panel p-3">
+              <LetterAvatar name={found.username} />
+              <span className="flex-1 truncate text-sm font-medium text-foreground">{found.username}</span>
+              {isFriend ? (
+                <span className="text-xs text-muted-foreground">已是好友</span>
+              ) : isOutgoing ? (
+                <span className="text-xs text-muted-foreground">等待确认…</span>
+              ) : (
+                <button
+                  onClick={() => act(() => apiFriendRequest(found.username), 'req:' + found.username)}
+                  disabled={busy === 'req:' + found.username}
+                  className="inline-flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60"
+                >
+                  <UserPlus className="h-3.5 w-3.5" /> 加好友
+                </button>
+              )}
+            </div>
+          )
+        })()}
+      </div>
+
+      {err && <p className="mt-2 px-1 text-xs text-destructive">{err}</p>}
+
+      {loading ? (
+        <div className="pt-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></div>
+      ) : (
+        <>
+          {/* 好友请求 */}
+          {rel && rel.incoming.length > 0 && (
+            <>
+              <SectionTitle>好友请求（{rel.incoming.length}）</SectionTitle>
+              <div className="space-y-2">
+                {rel.incoming.map((name) => (
+                  <div key={name} className="flex items-center gap-3 rounded-2xl g-border g-panel p-3">
+                    <LetterAvatar name={name} />
+                    <button onClick={() => navigate('/user/' + encodeURIComponent(name))} className="flex-1 truncate text-left text-sm font-medium text-foreground hover:underline">{name}</button>
+                    <button onClick={() => act(() => apiFriendAccept(name), 'acc:' + name)} disabled={busy === 'acc:' + name} className="inline-flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60">
+                      <Check className="h-3.5 w-3.5" /> 接受
+                    </button>
+                    <button onClick={() => act(() => apiFriendReject(name), 'rej:' + name)} disabled={busy === 'rej:' + name} className="inline-flex items-center gap-1 rounded-xl g-border g-panel px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-60">
+                      <X className="h-3.5 w-3.5" /> 拒绝
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* 好友列表 */}
+          <SectionTitle>好友（{rel?.friends.length ?? 0}）</SectionTitle>
+          {!rel || rel.friends.length === 0 ? (
+            <p className="px-1 text-xs text-muted-foreground/60">还没有好友，去社区或搜索添加吧～</p>
+          ) : (
+            <div className="space-y-2">
+              {rel.friends.map((name) => (
+                <div key={name} className="flex items-center gap-3 rounded-2xl g-border g-panel p-3">
+                  <button onClick={() => navigate('/user/' + encodeURIComponent(name))}>
+                    <LetterAvatar name={name} />
+                  </button>
+                  <button onClick={() => navigate('/user/' + encodeURIComponent(name))} className="flex-1 truncate text-left text-sm font-medium text-foreground hover:underline">{name}</button>
+                  <button onClick={() => openStudy(name)} title="一起学" className="rounded-xl g-border g-panel p-2 text-foreground transition active:scale-95">
+                    <BookOpen className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => openPk(name)} title="邀TA PK" className="rounded-xl g-border g-panel p-2 text-foreground transition active:scale-95">
+                    <Swords className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => act(() => apiFriendRemove(name), 'del:' + name)} title="移除好友" disabled={busy === 'del:' + name} className="rounded-xl g-border g-panel p-2 text-destructive transition active:scale-95 disabled:opacity-60">
+                    <UserMinus className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}

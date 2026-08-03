@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { apiLogin, apiRegister, apiGetMe, apiGetProgress, apiSaveProgress, apiSetAvatar, apiRemoveAvatar, apiBanAvatar, type CloudProgress, type SavedArticle, type Note } from '@/lib/authApi'
+import { apiLogin, apiRegister, apiGetMe, apiGetProgress, apiSaveProgress, apiSetAvatar, apiRemoveAvatar, apiBanAvatar, apiUpdateSignature, type CloudProgress, type SavedArticle, type Note } from '@/lib/authApi'
 import { setCloudUploader } from '@/lib/progressSync'
 import type { StudyPlan } from '@/lib/studyPlans'
 import type { ReviewRecord } from '@/lib/reviews'
 
 const TOKEN_KEY = 'auth_token'
 const USER_KEY = 'auth_user'
+const SIGNATURE_KEY = 'auth_signature'
 
 // 与 use-storage 保持一致的三组本地键
 const STARRED_KEY = 'liquid-words:starred'
@@ -151,9 +152,11 @@ interface AuthContextValue {
   importLocalToCloud: () => Promise<void>
   avatar: string | null
   avatarBanned: boolean
+  signature: string | null
   setUserAvatar: (dataUri: string) => Promise<void>
   removeUserAvatar: () => Promise<void>
   banUserAvatar: (username: string, banned: boolean) => Promise<void>
+  updateSignature: (sig: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -167,6 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean>(() => localStorage.getItem(ADMIN_KEY) === '1')
   const [avatar, setAvatarState] = useState<string | null>(() => localStorage.getItem(AVATAR_KEY) || null)
   const [avatarBanned, setAvatarBannedState] = useState<boolean>(() => localStorage.getItem(AVATAR_BANNED_KEY) === '1')
+  const [signature, setSignatureState] = useState<string | null>(() => localStorage.getItem(SIGNATURE_KEY) || null)
 
   // 已登录则注册云端上传器，同时从服务端拉取最新头像状态（封禁即时反映）
   useEffect(() => {
@@ -178,10 +182,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       apiGetMe().then((me) => {
         const av = me.avatar ?? null
         const banned = !!me.avatarBanned
+        const sig = me.signature ?? null
         localStorage.setItem(AVATAR_KEY, av ?? '')
         localStorage.setItem(AVATAR_BANNED_KEY, banned ? '1' : '0')
+        localStorage.setItem(SIGNATURE_KEY, sig ?? '')
         setAvatarState(av)
         setAvatarBannedState(banned)
+        setSignatureState(sig)
       }).catch(() => {})
     }
   }, [])
@@ -196,10 +203,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(admin)
     const av = res.avatar ?? null
     const banned = !!res.avatarBanned
+    const sig = res.signature ?? null
     localStorage.setItem(AVATAR_KEY, av ?? '')
     localStorage.setItem(AVATAR_BANNED_KEY, banned ? '1' : '0')
+    localStorage.setItem(SIGNATURE_KEY, sig ?? '')
     setAvatarState(av)
     setAvatarBannedState(banned)
+    setSignatureState(sig)
     setCloudUploader(async (slice) => {
       await apiSaveProgress(slice)
     })
@@ -224,10 +234,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(admin)
     const av = res.avatar ?? null
     const banned = !!res.avatarBanned
+    const sig = res.signature ?? null
     localStorage.setItem(AVATAR_KEY, av ?? '')
     localStorage.setItem(AVATAR_BANNED_KEY, banned ? '1' : '0')
+    localStorage.setItem(SIGNATURE_KEY, sig ?? '')
     setAvatarState(av)
     setAvatarBannedState(banned)
+    setSignatureState(sig)
     setCloudUploader(async (slice) => {
       await apiSaveProgress(slice)
     })
@@ -283,12 +296,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await apiBanAvatar(username, banned)
   }
 
+  const updateSignature = async (sig: string) => {
+    const { signature } = await apiUpdateSignature(sig)
+    const val = signature ?? null
+    localStorage.setItem(SIGNATURE_KEY, val ?? '')
+    setSignatureState(val)
+  }
+
   const importLocalToCloud = async () => {
     await apiSaveProgress(localSnapshot())
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthed: !!user, isAdmin, login, register, loginLocal, logout, importLocalToCloud, avatar, avatarBanned, setUserAvatar, removeUserAvatar, banUserAvatar }}>
+    <AuthContext.Provider value={{ user, isAuthed: !!user, isAdmin, login, register, loginLocal, logout, importLocalToCloud, avatar, avatarBanned, signature, setUserAvatar, removeUserAvatar, banUserAvatar, updateSignature }}>
       {children}
     </AuthContext.Provider>
   )

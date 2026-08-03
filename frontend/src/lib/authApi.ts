@@ -41,6 +41,7 @@ export interface AuthResult {
   role?: string
   avatar?: string | null
   avatarBanned?: boolean
+  signature?: string | null
 }
 
 export interface MeResult {
@@ -48,6 +49,7 @@ export interface MeResult {
   role?: string
   avatar?: string | null
   avatarBanned?: boolean
+  signature?: string | null
 }
 
 export async function apiLogin(username: string, password: string): Promise<AuthResult> {
@@ -95,5 +97,63 @@ export async function apiGetProgress(): Promise<CloudProgress> {
 
 export async function apiSaveProgress(slice: CloudProgress): Promise<CloudProgress> {
   const { data } = await apiClient.put<CloudProgress>('/progress', slice)
+  return data
+}
+
+// ---------- 好友系统 / 个性签名 / 公开档案 ----------
+export interface PublicUser {
+  username: string
+  avatar: string | null
+  avatarBanned: boolean
+  signature: string | null
+  pkWins: number
+  stats: { known: number; starred: number; posts: number }
+}
+
+export interface FriendRelations {
+  friends: string[]
+  incoming: string[]
+  outgoing: string[]
+}
+
+export type FriendStatus = 'none' | 'outgoing' | 'incoming' | 'friend' | 'self'
+
+export async function apiGetUser(username: string): Promise<PublicUser> {
+  const { data } = await apiClient.get<PublicUser>('/users/' + encodeURIComponent(username))
+  return data
+}
+
+export async function apiUpdateSignature(signature: string): Promise<{ signature: string | null }> {
+  const { data } = await apiClient.put<{ signature: string | null }>('/auth/signature', { signature })
+  return data
+}
+
+export async function apiGetFriends(): Promise<FriendRelations> {
+  const { data } = await apiClient.get<FriendRelations>('/friends')
+  return data
+}
+
+export async function apiFriendRequest(username: string): Promise<{ status: string }> {
+  const { data } = await apiClient.post<{ status: string }>('/friends/request', { friendUsername: username })
+  return data
+}
+
+export async function apiFriendAccept(username: string): Promise<{ status: string }> {
+  const { data } = await apiClient.post<{ status: string }>('/friends/accept', { friendUsername: username })
+  return data
+}
+
+export async function apiFriendReject(username: string): Promise<{ status: string }> {
+  const { data } = await apiClient.post<{ status: string }>('/friends/reject', { friendUsername: username })
+  return data
+}
+
+export async function apiFriendRemove(username: string): Promise<{ status: string }> {
+  const { data } = await apiClient.delete<{ status: string }>('/friends/' + encodeURIComponent(username))
+  return data
+}
+
+export async function apiFriendStatus(username: string): Promise<{ status: FriendStatus }> {
+  const { data } = await apiClient.get<{ status: FriendStatus }>('/friends/status/' + encodeURIComponent(username))
   return data
 }

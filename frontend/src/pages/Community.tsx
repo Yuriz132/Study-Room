@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 import {
   Coffee, HelpCircle, MessageSquare, Send, Loader2,
@@ -33,6 +33,27 @@ function timeAgo(ts: number): string {
   if (d < 30) return `${d} 天前`
   const date = new Date(ts)
   return `${date.getMonth() + 1}月${date.getDate()}日`
+}
+
+// 头像点击跳转用户主页（聊天 / 帖子 / 评论通用）
+function AvatarLink({ name, avatar, size, className }: { name: string; avatar?: string | null; size: number; className?: string }) {
+  const navigate = useNavigate()
+  return (
+    <span
+      className={'inline-flex shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full ' + (className || '')}
+      style={{ width: size, height: size }}
+      onClick={(e) => { e.stopPropagation(); navigate('/user/' + encodeURIComponent(name)) }}
+      title={`查看 ${name} 的主页`}
+    >
+      {avatar ? (
+        <img src={avatar} className="h-full w-full object-cover" alt="" />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+          {(name || '?')[0]}
+        </span>
+      )}
+    </span>
+  )
 }
 
 /* ---- 自动识别文本中的链接并渲染为可点击蓝字 ---- */
@@ -433,13 +454,7 @@ function ForumPostRow({ post, onClick }: { post: ForumPost; onClick: () => void 
       )}
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[10px] text-muted-foreground/60">
-          {post.authorAvatar ? (
-            <img src={post.authorAvatar} className="h-4 w-4 shrink-0 rounded-full object-cover" alt="" />
-          ) : (
-            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted/40 text-[8px] font-bold text-muted-foreground">
-              {(post.author || '?')[0]}
-            </span>
-          )}
+          <AvatarLink name={post.author} avatar={post.authorAvatar} size={16} />
           <span className="truncate">{post.author} · {timeAgo(post.createdAt)}</span>
         </span>
         <div className="flex shrink-0 items-center gap-2.5 rounded-lg bg-muted/35 px-2 py-1 text-[10px] tabular-nums text-muted-foreground/75">
@@ -644,13 +659,7 @@ function ForumPostDetail({ post, onBack, onDelete, isAuthed, user, isAdmin }: {
           </div>
         )}
         <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground/60">
-          {current.authorAvatar ? (
-            <img src={current.authorAvatar} className="h-5 w-5 rounded-full object-cover" alt="" />
-          ) : (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted/40 text-[10px] font-bold text-muted-foreground">
-              {(current.author || '?')[0]}
-            </span>
-          )}
+          <AvatarLink name={current.author} avatar={current.authorAvatar} size={20} />
           <span>{current.author}</span><span>·</span><span>{timeAgo(current.createdAt)}</span>
           {canDeletePost && <button onClick={onDelete} className="ml-auto text-destructive hover:underline">删除</button>}
         </div>
@@ -790,19 +799,7 @@ function CommentItem({ c, isAdmin, postAuthor, currentUser, isReply, onReply, on
 
   return (
     <div className="flex gap-2.5">
-      {c.authorAvatar ? (
-        <img src={c.authorAvatar} className={cn(
-          'mt-0.5 shrink-0 rounded-full object-cover',
-          isReply ? 'h-6 w-6' : 'h-7 w-7'
-        )} alt={c.author} />
-      ) : (
-        <div className={cn(
-          'mt-0.5 flex shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
-          isReply ? 'h-6 w-6 bg-muted/30 text-muted-foreground' : 'h-7 w-7 bg-primary/20 text-primary'
-        )}>
-          {(c.author || '?')[0]}
-        </div>
-      )}
+      <AvatarLink name={c.author} avatar={c.authorAvatar} size={isReply ? 24 : 28} className="mt-0.5" />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-1.5">
           <span className={cn('text-xs font-medium', isReply ? 'text-foreground/60' : 'text-foreground/70')}>
@@ -945,20 +942,14 @@ function ChatRoom({ onBack }: { onBack: () => void }) {
         {messages.map((msg) =>
           msg.type === 'system' ? (
             <div key={msg.id} className="flex justify-center my-2.5">
-              <span className="rounded-full bg-muted/40 px-3 py-0.5 text-[11px] text-muted-foreground/60">
+              <span className="whitespace-pre-line rounded-2xl bg-muted/40 px-3 py-2 text-center text-[11px] leading-relaxed text-muted-foreground/70">
                 {msg.text}
               </span>
             </div>
           ) : (
             <div key={msg.id} className="flex gap-2.5 mb-3 group">
               {/* 头像 */}
-              {msg.avatar ? (
-                <img src={msg.avatar} className="mt-0.5 h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-border/30" alt="" />
-              ) : (
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary ring-1 ring-primary/20">
-                  {(msg.username || '?')[0]}
-                </div>
-              )}
+              <AvatarLink name={msg.username} avatar={msg.avatar} size={32} className="mt-0.5" />
               {/* 消息内容 */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-1.5 mb-0.5">

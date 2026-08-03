@@ -3,6 +3,7 @@ import { createServer } from 'http'
 import { Server } from 'socket.io'
 import { registerPk } from './modules/pk'
 import { registerChat } from './modules/chat'
+import { registerStudy } from './modules/study'
 import { env } from './config/env'
 import { logger } from './config/logger'
 
@@ -19,6 +20,7 @@ const startServer = async () => {
     })
     registerPk(io)
     registerChat(io)
+    registerStudy(io)
 
     httpServer.listen(env.PORT, () => {
       // Only show minimal startup info in development

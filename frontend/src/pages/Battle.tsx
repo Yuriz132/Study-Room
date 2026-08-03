@@ -12,6 +12,15 @@ export default function Battle() {
   const [token] = useState<string | null>(() => localStorage.getItem('auth_token'))
   const pk = usePk(token)
 
+  const params = new URLSearchParams(window.location.search)
+  const invited = params.get('invited')   // 我是发起方：等待对方接受
+  const invite = params.get('invite')     // 我是受邀方：接受即开战
+
+  useEffect(() => {
+    if (invite) pk.acceptInvite(invite)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invite])
+
   const [remaining, setRemaining] = useState(0)
   const startRef = useRef(0)
 
@@ -57,7 +66,7 @@ export default function Battle() {
         <span className="ml-auto text-xs text-muted-foreground">{user ? `玩家：${user}` : ''}</span>
       </header>
 
-      {pk.phase === 'idle' && (
+      {pk.phase === 'idle' && !invited && !invite && (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground/80">选择模式，开始一场 10 回合的单词对决（看释义选单词，又快又准得分更高）。</p>
           <button
@@ -83,6 +92,21 @@ export default function Battle() {
               <div className="text-sm font-semibold text-foreground">人机对战（单词机器人）</div>
               <div className="mt-0.1 text-xs text-muted-foreground">随时开战，机器人约 78% 正确率</div>
             </div>
+          </button>
+        </div>
+      )}
+
+      {invited && pk.phase !== 'playing' && pk.phase !== 'result' && (
+        <div className="liquid-glass rounded-3xl p-10 text-center">
+          <Loader2 className="mx-auto mb-4 h-9 w-9 animate-spin text-primary" />
+          <p className="text-sm font-medium text-foreground">已邀请 {invited}，等待对方接受…</p>
+          <p className="mt-1 text-xs text-muted-foreground">对方同意后即可开始对战</p>
+          {pk.error && <p className="mt-3 text-xs text-rose-400">{pk.error}</p>}
+          <button
+            onClick={() => { pk.cancel(); navigate(-1) }}
+            className="mt-5 rounded-xl border g-border g-panel px-5 py-2 text-sm text-foreground transition-all active:scale-95"
+          >
+            取消
           </button>
         </div>
       )}

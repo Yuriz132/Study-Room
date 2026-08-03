@@ -72,6 +72,25 @@ export function registerChat(io: Server): void {
       addMessage(joinMsg)
       io.emit('chat:message', joinMsg)
       broadcastOnlineCount(io)
+
+      // 向加入者单独推送欢迎须知（多行 system 消息，前端 whitespace-pre-line 渲染）
+      const welcomeText =
+`欢迎 ${username} 进入聊天室 🎉
+—————————————————
+聊天室是公共空间，请注意：
+· 文明发言，尊重他人隐私
+· 保护好个人信息与财产安全
+· 请勿随意添加陌生人微信
+祝大家学习愉快！`
+      const welcomeMsg: ChatMessage = {
+        id: genId(),
+        type: 'system',
+        username,
+        avatar,
+        text: welcomeText,
+        timestamp: Date.now(),
+      }
+      socket.emit('chat:message', welcomeMsg)
     })
 
     socket.on('chat:message', (data: { text: string }) => {
