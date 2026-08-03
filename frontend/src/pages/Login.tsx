@@ -30,14 +30,27 @@ export default function Login() {
   })();
 
   // Load 极验 Geetest v4 行为验证
+  // 关键点：组件 mount 时默认是登录模式，#geetest-widget 容器未渲染；
+  // 所以必须等切换到注册模式后再初始化，否则 appendTo 会找不到目标。
   useEffect(() => {
-    if (!geetestCaptchaId) return;
-    // 防止重复加载
-    if (document.querySelector('script[src*="static.geetest.com/v4/gt4.js"]')) return;
-    const s = document.createElement('script');
-    s.src = 'https://static.geetest.com/v4/gt4.js';
-    s.async = true;
-    s.onload = () => {
+    if (!geetestCaptchaId || mode !== 'register') return;
+
+    const loadScript = () => {
+      return new Promise<void>((resolve) => {
+        if (document.querySelector('script[src*="static.geetest.com/v4/gt4.js"]')) {
+          resolve();
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = 'https://static.geetest.com/v4/gt4.js';
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => resolve();
+        document.head.appendChild(s);
+      });
+    };
+
+    loadScript().then(() => {
       if (!(window as any).initGeetest4) return;
       (window as any).initGeetest4({
         captchaId: geetestCaptchaId,
@@ -53,10 +66,11 @@ export default function Login() {
           if (result) geetestResult.current = result;
         }).onError((err: any) => {
           console.error('Geetest error:', err?.msg || err);
+          setError('验证码加载失败，请刷新页面重试');
         });
       });
-    };
-    document.head.appendChild(s);
+    });
+
     return () => {
       if (captchaObjRef.current) {
         try { captchaObjRef.current.destroy(); } catch {}
@@ -64,7 +78,7 @@ export default function Login() {
       }
       geetestResult.current = null;
     };
-  }, [geetestCaptchaId]);
+  }, [geetestCaptchaId, mode]);
   const [agreed, setAgreed] = useState(false);
   const [showAgreementDialog, setShowAgreementDialog] = useState(false);
   const agreementRef = useRef<HTMLDivElement>(null);
