@@ -12,6 +12,7 @@ import { aiRouter } from './modules/ai'
 import { leaderboardRouter } from './modules/leaderboard'
 import { publicNotesRouter } from './modules/public-notes'
 import { forumRouter } from './modules/forum'
+import { friendsRouter } from './modules/friends'
 // ============================================
 // Add your domain module imports here
 // ============================================
@@ -59,6 +60,9 @@ export const createApp = (): Application => {
 
   // 论坛帖子（登录可发表，读取公开）
   app.use(env.API_PREFIX, forumRouter)
+
+  // 好友关系（均需登录）
+  app.use(env.API_PREFIX, friendsRouter)
 
   // ============================================
   // Add your domain module routes here

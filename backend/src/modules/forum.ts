@@ -99,9 +99,11 @@ export const forumRouter: Router = Router()
 
 forumRouter.get('/forum/posts', async (req: Request, res: Response) => {
   const cat = (req.query.category as string) || 'all'
+  const author = (req.query.author as string) || ''
   const all = await loadPosts()
   let list = all.filter(p => !p.hidden).sort((a, b) => b.createdAt - a.createdAt)
   if (cat !== 'all') list = list.filter(p => p.category === cat)
+  if (author) list = list.filter(p => p.author === author)
   const enriched = await enrichPosts(list)
   return res.json(enriched)
 })

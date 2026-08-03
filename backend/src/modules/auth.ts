@@ -81,6 +81,8 @@ export interface User {
   avatar?: string | null
   /** 管理员封禁头像：为 true 时前端不显示头像，且本人无法修改 */
   avatarBanned?: boolean
+  /** 个性签名（用户自定义，≤80 字） */
+  signature?: string
   progress: ProgressData
 }
 
@@ -134,8 +136,8 @@ function generateToken(): string {
   return randomBytes(32).toString('hex')
 }
 
-function publicUser(u: User): { username: string; token: string; role?: string; avatar?: string | null; avatarBanned?: boolean } {
-  return { username: u.username, token: u.token as string, role: u.role, avatar: u.avatar ?? null, avatarBanned: !!u.avatarBanned }
+function publicUser(u: User): { username: string; token: string; role?: string; avatar?: string | null; avatarBanned?: boolean; signature?: string | null } {
+  return { username: u.username, token: u.token as string, role: u.role, avatar: u.avatar ?? null, avatarBanned: !!u.avatarBanned, signature: u.signature ?? null }
 }
 
 /** 校验头像 data URI：仅允许图片格式，解码后 ≤ 1MB，魔术字节校验防伪造 */
@@ -381,7 +383,7 @@ authRouter.post('/auth/login', ipGuardLogin, async (req: Request, res: Response)
 // 获取当前登录用户信息（用户名+角色+头像状态）
 authRouter.get('/auth/me', authMiddleware, async (req: Request, res: Response) => {
   const user = (req as AuthedRequest).user as User
-  return res.json({ username: user.username, role: user.role, avatar: user.avatar ?? null, avatarBanned: !!user.avatarBanned })
+  return res.json({ username: user.username, role: user.role, avatar: user.avatar ?? null, avatarBanned: !!user.avatarBanned, signature: user.signature ?? null })
 })
 
 // 头像：仅本人可设置 / 清除
@@ -460,6 +462,51 @@ authRouter.put('/auth/password', authMiddleware, async (req: Request, res: Respo
   if (idx >= 0) users[idx] = user
   await saveUsers(users)
   return res.json({ message: '密码修改成功', token: user.token })
+})
+
+// 个性签名：仅本人可设置（≤80 字）
+const signatureSchema = z.object({ signature: z.string().trim().max(80, '个性签名最多 80 字') })
+authRouter.put('/auth/signature', authMiddleware, async (req: Request, res: Response) => {
+  const parsed = signatureSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ message: parsed.error.issues[0]?.message ?? '参数错误' })
+  }
+  const user = (req as AuthedRequest).user as User
+  user.signature = parsed.data.signature || undefined
+  const users = await loadUsers()
+  const idx = users.findIndex((u) => u.username === user.username)
+  if (idx >= 0) users[idx] = user
+  await saveUsers(users)
+  return res.json({ signature: user.signature ?? null })
+})
+
+// 公开用户档案（无需登录）：资料 + 学习统计 + 发帖数
+const FORUM_POSTS_FILE = path.join(DATA_DIR, 'forum_posts.json')
+authRouter.get('/users/:username', async (req: Request, res: Response) => {
+  const name = String(req.params.username)
+  const users = await loadUsers()
+  const u = users.find((x) => x.username === name)
+  if (!u) return res.status(404).json({ message: '用户不存在' })
+  let postCount = 0
+  try {
+    const raw = await fs.readFile(FORUM_POSTS_FILE, 'utf-8')
+    const posts = JSON.parse(raw) as Array<{ author: string; hidden?: boolean }>
+    postCount = posts.filter((p) => p.author === name && !p.hidden).length
+  } catch {
+    postCount = 0
+  }
+  return res.json({
+    username: u.username,
+    avatar: u.avatarBanned ? null : (u.avatar ?? null),
+    avatarBanned: !!u.avatarBanned,
+    signature: u.signature ?? null,
+    pkWins: u.pkWins ?? 0,
+    stats: {
+      known: (u.progress.known || []).length,
+      starred: (u.progress.starred || []).length,
+      posts: postCount,
+    },
+  })
 })
 
 // 获取云端进度
