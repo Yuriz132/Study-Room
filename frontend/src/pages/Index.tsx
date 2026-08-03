@@ -81,7 +81,7 @@ export default function Index() {
           <header className="flex shrink-0 items-center gap-3 px-5 pt-11 pb-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-full border g-border g-panel bg-card text-base shadow-lg">📖</div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">B501班升本词汇</h1>
+              <h1 className="text-lg font-bold text-foreground">英语学习室</h1>
             </div>
           </header>
         </StaggerItemEnter>
