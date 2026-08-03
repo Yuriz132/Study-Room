@@ -243,11 +243,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [sound, setSound] = usePersistedBool(KEYS.sound, true);
   const [speechRate, setSpeechRate] = usePersistedNumber(KEYS.speechRate, 1);
   const [motionEnabled, setMotionEnabled] = usePersistedBool(KEYS.motionEnabled, DEFAULT_MOTION);
-  const [animationPreset, setAnimationPreset] = usePersistedString(KEYS.animationPreset, "适中") as readonly [
+  const [animationPreset, setAnimationPreset] = usePersistedString(KEYS.animationPreset, "优雅") as readonly [
     AnimationPreset,
     (v: AnimationPreset) => void,
   ];
-  const [theme, setTheme] = usePersistedTheme(KEYS.theme, "dark");
+  const [theme, setTheme] = usePersistedTheme(KEYS.theme, "system");
   const [wallpaper, setWallpaper] = usePersistedString(KEYS.wallpaper, "");
   const [fontColor, setFontColor] = usePersistedString(KEYS.fontColor, "");
   const [skin, setSkin] = usePersistedSkin(KEYS.skin, "default");
