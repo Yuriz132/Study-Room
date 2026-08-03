@@ -3,6 +3,16 @@ import { User, Lock, Smartphone } from "lucide-react";
 import { ExplodeIn, FlyIn } from "@/components/MotionPrimitives";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Login() {
   const { login, register, loginLocal } = useAuth();
@@ -56,6 +66,7 @@ export default function Login() {
     };
   }, [geetestCaptchaId]);
   const [agreed, setAgreed] = useState(false);
+  const [showAgreementDialog, setShowAgreementDialog] = useState(false);
   const agreementRef = useRef<HTMLDivElement>(null);
 
   const scrollToAgreement = () => {
@@ -158,12 +169,19 @@ export default function Login() {
 
             {error && <p className="text-sm text-red-400">{error}</p>}
 
-            {/* 同意协议勾选框 */}
+            {/* 同意协议勾选框 — 点击时弹出二次确认，避免无意识勾选 */}
             <label className="flex items-start gap-2 cursor-pointer py-1">
               <input
                 type="checkbox"
                 checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    // 勾选时弹出确认弹窗（取消勾选则直接取消）
+                    setShowAgreementDialog(true)
+                  } else {
+                    setAgreed(false)
+                  }
+                }}
                 className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
               />
               <span className="text-xs text-muted-foreground leading-relaxed">
@@ -204,9 +222,59 @@ export default function Login() {
         </p>
       </FlyIn>
 
+      {/* 服务协议二次确认弹窗 — 防止用户无意识勾选 */}
+      <AlertDialog open={showAgreementDialog} onOpenChange={setShowAgreementDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-center text-xl">隐私政策</AlertDialogTitle>
+            <AlertDialogDescription className="text-left text-sm leading-relaxed pt-2">
+              请阅读并同意
+              <a
+                href="#service-agreement"
+                onClick={(e) => { e.preventDefault(); scrollToAgreement(); setShowAgreementDialog(false); }}
+                className="text-primary underline underline-offset-2 mx-1 font-medium"
+              >
+                《服务协议》
+              </a>
+              与
+              <a
+                href="#service-agreement"
+                onClick={(e) => { e.preventDefault(); scrollToAgreement(); setShowAgreementDialog(false); }}
+                className="text-primary underline underline-offset-2 mx-1 font-medium"
+              >
+                《隐私政策》
+              </a>
+              后再继续注册 / 登录
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-lg border g-border g-panel p-3 text-xs leading-relaxed text-muted-foreground/90 max-h-40 overflow-y-auto">
+            <p className="mb-1.5"><span className="font-medium text-foreground">一、平台性质：</span>本站为本班同学免费内部学习平台，非营利性质，不对外公开推广。</p>
+            <p className="mb-1.5"><span className="font-medium text-foreground">二、内容规范：</span>用户评论、上传图片仅限学习交流；禁止发布盗版资源、不良图文、广告引流内容；禁止向外分享链接。</p>
+            <p className="mb-1.5"><span className="font-medium text-foreground">三、法律责任：</span>违规内容一经发现将立即删除，发布者账号将被限制访问。</p>
+            <p className="mb-1.5"><span className="font-medium text-foreground">四、知识产权：</span>本站收录的词汇、音频等学习资源仅供内部教学使用。</p>
+            <p className="mb-1.5"><span className="font-medium text-foreground">五、隐私保护：</span>本站仅收集用户名与加密密码用于账号登录；学习记录存储于服务器以便跨设备同步；不会向任何第三方提供您的个人数据。</p>
+            <p><span className="font-medium text-foreground">六、生效条款：</span>访问或注册本站即视为您已阅读、理解并同意以上全部约定。</p>
+          </div>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel
+              onClick={() => setShowAgreementDialog(false)}
+              className="flex-1 rounded-lg border g-border g-panel py-2.5"
+            >
+              拒绝
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { setAgreed(true); setShowAgreementDialog(false); }}
+              className="flex-1 rounded-lg bg-primary py-2.5 hover:bg-primary/90"
+            >
+              同意
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* 完整服务协议与隐私政策（底部） */}
       <FlyIn delay={0.18}>
-        <div ref={agreementRef} className="mt-6 w-full max-w-md rounded-2xl border g-border g-panel p-5">
+        <div id="service-agreement" ref={agreementRef} className="mt-6 w-full max-w-md rounded-2xl border g-border g-panel p-5">
           <h3 className="mb-3 text-center text-sm font-semibold text-foreground">服务协议与隐私政策</h3>
           <div className="space-y-2 text-[11px] leading-relaxed text-muted-foreground/80">
             <div>
