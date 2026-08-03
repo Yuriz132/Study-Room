@@ -3,6 +3,7 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { z } from 'zod'
 import { authMiddleware, loadUsers } from './auth'
+import { appendDm, convKey, computeUnread, type DmMessage } from './dmStore'
 
 // ============================================
 // 好友关系模块（请求 / 确认制）
@@ -26,7 +27,7 @@ type FriendGraph = Record<string, FriendNode>
 
 let graphCache: FriendGraph | null = null
 
-async function loadGraph(): Promise<FriendGraph> {
+export async function loadGraph(): Promise<FriendGraph> {
   if (graphCache) return graphCache
   try {
     const raw = await fs.readFile(FRIENDS_FILE, 'utf-8')
@@ -63,6 +64,15 @@ friendsRouter.get('/friends', async (req: Request, res: Response) => {
   const g = await loadGraph()
   const n = g[me] || { friends: [], incoming: [], outgoing: [] }
   return res.json({ friends: n.friends, incoming: n.incoming, outgoing: n.outgoing })
+})
+
+// 好友相关红点指标：待处理好友申请数 + 未读私信数（含按好友归类）
+friendsRouter.get('/friends/indicators', async (req: Request, res: Response) => {
+  const me = (req as AuthedReq).user!.username
+  const g = await loadGraph()
+  const requests = (g[me]?.incoming || []).length
+  const { total, byFriend } = await computeUnread(me)
+  return res.json({ requests, unread: total, unreadByFriend: byFriend, has: requests > 0 || total > 0 })
 })
 
 // 发送好友请求
@@ -125,6 +135,20 @@ friendsRouter.post('/friends/accept', async (req: Request, res: Response) => {
   if (!mine.friends.includes(target)) mine.friends.push(target)
   if (!theirs.friends.includes(me)) theirs.friends.push(me)
   await saveGraph(g)
+  // 互相成为好友后，在私信会话里插入系统提示
+  try {
+    const sysMsg: DmMessage = {
+      id: Math.random().toString(36).slice(2, 10),
+      conv: convKey(me, target),
+      from: me,
+      to: target,
+      text: '🎉 你们已成为好友，可以开始私信聊天啦！',
+      type: 'system',
+      timestamp: Date.now(),
+      read: true,
+    }
+    await appendDm(sysMsg)
+  } catch { /* ignore */ }
   return res.json({ status: 'friend' })
 })
 

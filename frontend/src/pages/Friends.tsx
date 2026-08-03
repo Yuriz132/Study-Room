@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { UserPlus, Check, X, Swords, BookOpen, Search, Loader2, UserMinus, Users } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { useFriendIndicators } from '@/context/FriendIndicatorContext'
 import {
   apiGetFriends, apiFriendRequest, apiFriendAccept, apiFriendReject, apiFriendRemove,
   apiGetUser, type FriendRelations, type PublicUser,
@@ -27,6 +28,8 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 export default function FriendsPage() {
   const navigate = useNavigate()
   const { user, isAuthed } = useAuth()
+  const { unreadByFriend } = useFriendIndicators()
+  const [confirming, setConfirming] = useState('')
   const [rel, setRel] = useState<FriendRelations | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
@@ -169,26 +172,48 @@ export default function FriendsPage() {
             <p className="px-1 text-xs text-muted-foreground/60">还没有好友，去社区或搜索添加吧～</p>
           ) : (
             <div className="space-y-2">
-              {rel.friends.map((name) => (
+              {rel.friends.map((name) => {
+                const unread = unreadByFriend[name] || 0
+                return (
                 <div key={name} className="flex items-center gap-3 rounded-2xl g-border g-panel p-3">
-                  <button onClick={() => navigate('/user/' + encodeURIComponent(name))}>
+                  <button onClick={() => navigate('/dm/' + encodeURIComponent(name))} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                     <LetterAvatar name={name} />
+                    <span className="relative truncate text-sm font-medium text-foreground">
+                      {name}
+                      {unread > 0 && (
+                        <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white align-middle">{unread > 99 ? '99+' : unread}</span>
+                      )}
+                    </span>
                   </button>
-                  <button onClick={() => navigate('/user/' + encodeURIComponent(name))} className="flex-1 truncate text-left text-sm font-medium text-foreground hover:underline">{name}</button>
-                  <button onClick={() => openStudy(name)} title="一起学" className="rounded-xl g-border g-panel p-2 text-foreground transition active:scale-95">
+                  <button onClick={(e) => { e.stopPropagation(); openStudy(name) }} title="一起学" className="rounded-xl g-border g-panel p-2 text-foreground transition active:scale-95">
                     <BookOpen className="h-4 w-4" />
                   </button>
-                  <button onClick={() => openPk(name)} title="邀TA PK" className="rounded-xl g-border g-panel p-2 text-foreground transition active:scale-95">
+                  <button onClick={(e) => { e.stopPropagation(); openPk(name) }} title="邀TA PK" className="rounded-xl g-border g-panel p-2 text-foreground transition active:scale-95">
                     <Swords className="h-4 w-4" />
                   </button>
-                  <button onClick={() => act(() => apiFriendRemove(name), 'del:' + name)} title="移除好友" disabled={busy === 'del:' + name} className="rounded-xl g-border g-panel p-2 text-destructive transition active:scale-95 disabled:opacity-60">
+                  <button onClick={() => setConfirming(name)} title="移除好友" className="rounded-xl g-border g-panel p-2 text-destructive transition active:scale-95">
                     <UserMinus className="h-4 w-4" />
                   </button>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </>
+      )}
+
+      {/* 移除好友二次确认 */}
+      {confirming && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setConfirming('')}>
+          <div className="w-full max-w-sm rounded-3xl bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-foreground">移除好友</h3>
+            <p className="mt-2 text-sm text-muted-foreground">确定要删除好友「{confirming}」吗？此操作不可撤销。</p>
+            <div className="mt-4 flex gap-2">
+              <button onClick={() => setConfirming('')} className="flex-1 rounded-xl g-border g-panel py-2.5 text-sm text-muted-foreground">取消</button>
+              <button onClick={() => { const n = confirming; setConfirming(''); act(() => apiFriendRemove(n), 'del:' + n) }} className="flex-1 rounded-xl bg-destructive py-2.5 text-sm font-medium text-white">确认删除</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

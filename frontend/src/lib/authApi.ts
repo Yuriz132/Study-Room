@@ -157,3 +157,16 @@ export async function apiFriendStatus(username: string): Promise<{ status: Frien
   const { data } = await apiClient.get<{ status: FriendStatus }>('/friends/status/' + encodeURIComponent(username))
   return data
 }
+
+// 好友相关红点指标（待处理申请 + 未读私信）
+export interface FriendIndicators {
+  requests: number
+  unread: number
+  unreadByFriend: Record<string, number>
+  has: boolean
+}
+
+export async function apiFriendIndicators(): Promise<FriendIndicators> {
+  const { data } = await apiClient.get<FriendIndicators>('/friends/indicators')
+  return data
+}

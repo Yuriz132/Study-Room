@@ -19,6 +19,7 @@ import { getErrorMessage } from '@/lib/api-client'
 import { StaggerContainerEnter, StaggerItemEnter, ANIMATION_PRESETS } from '@/components/MotionPrimitives'
 import { ImageLightbox } from '@/components/ImageLightbox'
 import { useSettings } from '@/context/SettingsContext'
+import { ChatDisclaimer } from '@/components/ChatDisclaimer'
 import { useChat } from '@/hooks/use-chat'
 
 /* ---- 时间格式化 ---- */
@@ -915,6 +916,8 @@ function ChatRoom({ onBack }: { onBack: () => void }) {
           background: 'linear-gradient(180deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.01) 100%)',
         }}
       >
+        <ChatDisclaimer />
+
         {!joined && (
           <div className="flex h-full flex-col items-center justify-center gap-2">
             {error ? (

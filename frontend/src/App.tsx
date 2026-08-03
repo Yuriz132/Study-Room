@@ -19,6 +19,7 @@ import CustomFlashcards from "./pages/CustomFlashcards";
 import Listen from "./pages/Listen";
 import Login from "./pages/Login";
 import Account from "./pages/Account";
+import Dm from "./pages/Dm";
 import More from "./pages/More";
 import Community from "./pages/Community";
 import Friends from "./pages/Friends";
@@ -30,6 +31,7 @@ import ImmersiveLearn from "./components/ImmersiveLearn";
 import { PomodoroTimer } from "./components/PomodoroTimer";
 import { AnimatedRoutes } from "./components/AnimatedRoutes";
 import { PageTransition } from "./components/PageTransition";
+import { FriendIndicatorProvider, useFriendIndicators } from "./context/FriendIndicatorContext";
 
 const navItems = [
   { to: "/", label: "首页", icon: Home },
@@ -42,6 +44,7 @@ const navItems = [
 ];
 
 function NavBar() {
+  const { has } = useFriendIndicators()
   const { pathname } = useLocation();
   const motionOn = useMotionEnabled();
   const isImmersive = pathname === "/immersive";
@@ -109,6 +112,9 @@ function NavBar() {
               {/* 图标：固定槽位内交叉淡入淡出，旧图标淡出、新图标淡入。
                   reduced-motion 下直接渲染静态图标，避免割裂。 */}
               <span className="relative z-10 flex items-center justify-center">
+                {n.to === '/friends' && has && (
+                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-[var(--glass-nav)]" />
+                )}
                 {reduceMotion ? (
                   <Icon className={"h-5 w-5 " + (isActive ? "text-primary-foreground" : "text-muted-foreground")} />
                 ) : (
@@ -174,6 +180,7 @@ function App() {
     <AuthProvider>
       <SettingsProvider>
         <BrowserRouter basename={window.location.pathname.startsWith('/vs') ? '/vs' : ''}>
+          <FriendIndicatorProvider>
           <div className="min-h-screen">
             <main className="mx-auto w-full max-w-2xl px-4 pb-24 pt-6">
               <AnimatedRoutes>
@@ -201,6 +208,7 @@ function App() {
                 <Route path="/pk" element={<PageTransition transition="stagger"><Battle /></PageTransition>} />
                 <Route path="/login" element={<PageTransition transition="stagger"><Login /></PageTransition>} />
                 <Route path="/account" element={<PageTransition transition="stagger"><Account /></PageTransition>} />
+                <Route path="/dm/:username" element={<PageTransition transition="stagger"><Dm /></PageTransition>} />
                 <Route path="/immersive" element={<PageTransition transition="stagger"><ImmersiveLearn /></PageTransition>} />
                 <Route path="*" element={<PageTransition transition="stagger"><Index /></PageTransition>} />
               </AnimatedRoutes>
@@ -209,6 +217,7 @@ function App() {
             <GlobalOverlays />
             <PkInviteListener />
           </div>
+          </FriendIndicatorProvider>
         </BrowserRouter>
       </SettingsProvider>
     </AuthProvider>
