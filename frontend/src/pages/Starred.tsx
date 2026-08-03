@@ -8,6 +8,7 @@ import { speakWord } from "@/lib/speak";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { aiAnalyzeNote } from "@/lib/ai";
 import { StudyAssistantChat } from "@/components/StudyAssistantChat";
+import { RequireLogin } from "@/components/RequireLogin";
 import { FileText, Headphones, Library, BookOpen, Wrench, Sparkles, FileQuestion } from "lucide-react";
 import type { Word } from "@/types/word";
 import type { Note } from "@/lib/authApi";
@@ -77,8 +78,12 @@ export default function Starred() {
         </div>
       </div>
 
-      {/* AI 学习助手（顶部卡片展开，对话本地保存） */}
-      {showAI && <StudyAssistantChat />}
+      {/* AI 学习助手（仅登录可用，对话本地保存） */}
+      {showAI && (
+        <RequireLogin feature="AI 助手">
+          <StudyAssistantChat />
+        </RequireLogin>
+      )}
 
       {/* Tab 切换 */}
       <div className="flex rounded-2xl border g-border bg-card p-1">

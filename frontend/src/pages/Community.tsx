@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { Lock } from 'lucide-react'
 import {
   Coffee, HelpCircle, MessageSquare, Send, Loader2,
   ChevronLeft, ChevronRight, Plus, Eye, ThumbsUp, Heart, Trophy, Trash2, Flame, ImagePlus,
   LayoutGrid, GraduationCap, Sun, Megaphone,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { RequireLogin } from '@/components/RequireLogin'
 import { cn } from '@/lib/utils'
 import {
   fetchForumPosts, createForumPost, deleteForumPost,
@@ -101,7 +103,9 @@ export default function Community() {
 
         <StaggerItemEnter>
           {showChat ? (
-            <ChatRoom onBack={() => setShowChat(false)} />
+            <RequireLogin feature="聊天室">
+              <ChatRoom onBack={() => setShowChat(false)} />
+            </RequireLogin>
           ) : inModule ? (
             <ForumView
               category={activeModule}
@@ -109,7 +113,7 @@ export default function Community() {
               isAuthed={isAuthed} user={user} isAdmin={isAdmin}
             />
           ) : (
-            <ModuleGrid onSelect={(k) => { setActiveModule(k); setInModule(true) }} onChat={() => setShowChat(true)} />
+            <ModuleGrid onSelect={(k) => { setActiveModule(k); setInModule(true) }} onChat={() => setShowChat(true)} isAuthed={isAuthed} />
           )}
         </StaggerItemEnter>
       </div>
@@ -120,7 +124,9 @@ export default function Community() {
 /* ===================================================================
    板块网格视图（5 个模块卡片，与「全部帖子」一致的横向卡片）
    =================================================================== */
-function ModuleGrid({ onSelect, onChat }: { onSelect: (key: string) => void; onChat: () => void }) {
+function ModuleGrid({ onSelect, onChat, isAuthed }: {
+  onSelect: (key: string) => void; onChat: () => void; isAuthed: boolean
+}) {
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [hotPosts, setHotPosts] = useState<ForumPost[]>([])
@@ -153,9 +159,15 @@ function ModuleGrid({ onSelect, onChat }: { onSelect: (key: string) => void; onC
         <div className="relative z-10 min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="whitespace-nowrap text-[15px] font-semibold text-foreground">实时聊天室</span>
-            <span className="shrink-0 rounded-full bg-rose-500 text-white px-2 py-0.5 text-[10px] font-bold animate-pulse">LIVE</span>
+            {isAuthed ? (
+              <span className="shrink-0 rounded-full bg-rose-500 text-white px-2 py-0.5 text-[10px] font-bold animate-pulse">LIVE</span>
+            ) : (
+              <span className="shrink-0 rounded-full bg-muted-foreground/20 text-muted-foreground px-2 py-0.5 text-[10px] font-bold flex items-center gap-1">
+                <Lock className="h-3 w-3" /> 需登录
+              </span>
+            )}
           </div>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground/70">和在线学友一起聊天</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground/70">{isAuthed ? '和在线学友一起聊天' : '登录后即可进入聊天室'}</p>
         </div>
         <ChevronRight className="relative z-10 h-4 w-4 shrink-0 text-muted-foreground/40" />
       </button>
