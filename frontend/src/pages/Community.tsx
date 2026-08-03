@@ -21,6 +21,7 @@ import { ImageLightbox } from '@/components/ImageLightbox'
 import { useSettings } from '@/context/SettingsContext'
 import { ChatDisclaimer } from '@/components/ChatDisclaimer'
 import { useChat } from '@/hooks/use-chat'
+import { usePresence } from '@/context/PresenceContext'
 
 /* ---- 时间格式化 ---- */
 function timeAgo(ts: number): string {
@@ -106,6 +107,7 @@ const ADMIN_USERNAME = '20051226'
 
 export default function Community() {
   const { isAuthed, user, isAdmin } = useAuth()
+  const { onlineCount } = usePresence()
   const { animationPreset } = useSettings()
   const preset = ANIMATION_PRESETS[animationPreset]
   const staggerOpts = { stagger: preset.stagger, distance: preset.distance, ease: preset.ease }
@@ -117,9 +119,15 @@ export default function Community() {
     <StaggerContainerEnter className="min-h-screen pb-24 pt-6" options={staggerOpts}>
       <div className="mx-auto w-full max-w-2xl px-4">
         <StaggerItemEnter>
-          <header className="mb-4">
-            <h1 className="text-2xl font-bold text-foreground">社区</h1>
-            <p className="mt-1 text-xs text-muted-foreground">学习互助，共同进步</p>
+          <header className="mb-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-foreground">社区</h1>
+              <p className="mt-1 text-xs text-muted-foreground">学习互助，共同进步</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/40 px-3 py-1.5">
+              <span className={cn('h-2 w-2 rounded-full', onlineCount > 0 ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]' : 'bg-gray-400')} />
+              <span className="text-[11px] tabular-nums text-muted-foreground">{onlineCount} 人在线</span>
+            </div>
           </header>
         </StaggerItemEnter>
 

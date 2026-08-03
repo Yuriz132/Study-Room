@@ -16,7 +16,8 @@ export interface DmMessage {
   from: string
   to: string
   text: string
-  type: 'message' | 'system'
+  type: 'message' | 'system' | 'invite'
+  action?: 'study' | 'pk'
   timestamp: number
   read: boolean
 }

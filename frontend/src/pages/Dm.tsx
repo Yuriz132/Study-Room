@@ -88,6 +88,20 @@ export default function Dm() {
             <div key={msg.id} className="flex justify-center my-1">
               <span className="whitespace-pre-line rounded-2xl bg-muted/40 px-3 py-2 text-center text-[11px] leading-relaxed text-muted-foreground/70">{msg.text}</span>
             </div>
+          ) : msg.type === 'invite' ? (
+            <div key={msg.id} className={cn('flex', msg.from === user ? 'justify-end' : 'justify-start')}>
+              <div className={cn('max-w-[80%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed', msg.from === user ? 'bg-primary/10 text-foreground rounded-br-sm' : 'bg-muted/40 text-foreground rounded-bl-sm')}>
+                <p className="break-words whitespace-pre-wrap">{msg.from === user ? `你邀请 ${msg.to} 一起${msg.action === 'pk' ? '单词PK' : '学习'}` : `${msg.from} 邀请你一起${msg.action === 'pk' ? '单词PK' : '学习'}`}</p>
+                {msg.from !== user && (
+                  <button
+                    onClick={() => navigate(msg.action === 'pk' ? `/pk?invite=${encodeURIComponent(msg.from)}` : `/study/${encodeURIComponent(msg.from)}`)}
+                    className="mt-2 w-full rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+                  >
+                    {msg.action === 'pk' ? '接受 PK' : '一起学'}
+                  </button>
+                )}
+              </div>
+            </div>
           ) : (
             <div key={msg.id} className={cn('flex', msg.from === user ? 'justify-end' : 'justify-start')}>
               <div className={cn('max-w-[78%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed', msg.from === user ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-muted/30 dark:bg-muted/20 text-foreground/85 rounded-bl-sm')}>

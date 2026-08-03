@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react"
-import { BrowserRouter, Route, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Route, NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMotionEnabled } from "@/lib/motionPref";
-import { getPkSocket, onPk, emitPk } from "@/lib/pkSocket";
 import { Home, BookOpen, Brain, Star, MessageCircle, MoreHorizontal, Users } from "lucide-react";
 import { AuthProvider } from "./context/AuthContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
@@ -32,6 +30,7 @@ import { PomodoroTimer } from "./components/PomodoroTimer";
 import { AnimatedRoutes } from "./components/AnimatedRoutes";
 import { PageTransition } from "./components/PageTransition";
 import { FriendIndicatorProvider, useFriendIndicators } from "./context/FriendIndicatorContext";
+import { PresenceProvider } from "./context/PresenceContext";
 
 const navItems = [
   { to: "/", label: "首页", icon: Home },
@@ -141,35 +140,6 @@ function NavBar() {
 }
 
 
-function PkInviteListener() {
-  const navigate = useNavigate()
-  const [invite, setInvite] = useState<{ from: string; mode: string } | null>(null)
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
-  useEffect(() => {
-    if (!token) return
-    getPkSocket(token)
-    const off = onPk('pk:inviteReceived', (d: { from: string; mode: string }) => {
-      setInvite({ from: d.from, mode: d.mode || 'human' })
-    })
-    return off
-  }, [token])
-  if (!invite) return null
-  const from = invite.from
-  const decline = () => { emitPk('pk:declineInvite', { fromUsername: from }); setInvite(null) }
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" onClick={decline}>
-      <div className="w-full max-w-sm rounded-3xl bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-base font-semibold text-foreground">{from} 邀请你单词 PK</h3>
-        <p className="mt-1 text-sm text-muted-foreground">要不要来一局实时对战，比一比谁背得又快又准？</p>
-        <div className="mt-4 flex gap-2">
-          <button onClick={decline} className="flex-1 rounded-xl g-border g-panel py-2.5 text-sm text-muted-foreground">拒绝</button>
-          <button onClick={() => { setInvite(null); navigate('/pk?invite=' + encodeURIComponent(from)) }} className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground">接受</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function GlobalOverlays() {
   const { pomodoroVisible } = useSettings();
   return pomodoroVisible ? <PomodoroTimer /> : null;
@@ -180,6 +150,7 @@ function App() {
     <AuthProvider>
       <SettingsProvider>
         <BrowserRouter basename={window.location.pathname.startsWith('/vs') ? '/vs' : ''}>
+          <PresenceProvider>
           <FriendIndicatorProvider>
           <div className="min-h-screen">
             <main className="mx-auto w-full max-w-2xl px-4 pb-24 pt-6">
@@ -215,9 +186,9 @@ function App() {
             </main>
             <NavBar />
             <GlobalOverlays />
-            <PkInviteListener />
           </div>
           </FriendIndicatorProvider>
+          </PresenceProvider>
         </BrowserRouter>
       </SettingsProvider>
     </AuthProvider>

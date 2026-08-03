@@ -170,6 +170,12 @@ export async function apiFriendStatus(username: string): Promise<{ status: Frien
   return data
 }
 
+/** 通过私信向好友发送「一起学 / 单词PK」邀请（好友在私信里点击即可加入） */
+export async function apiSendDmInvite(to: string, action: 'study' | 'pk'): Promise<{ ok: boolean }> {
+  const { data } = await apiClient.post<{ ok: boolean }>('/dm/invite', { to, action })
+  return data
+}
+
 // 好友相关红点指标（待处理申请 + 未读私信）
 export interface FriendIndicators {
   requests: number

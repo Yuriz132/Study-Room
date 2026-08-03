@@ -14,6 +14,7 @@ import { publicNotesRouter } from './modules/public-notes'
 import { forumRouter } from './modules/forum'
 import { friendsRouter } from './modules/friends'
 import { accountRouter } from './modules/account'
+import { dmRouter } from './modules/dm'
 // ============================================
 // Add your domain module imports here
 // ============================================
@@ -67,6 +68,9 @@ export const createApp = (): Application => {
 
   // 账号注销（自注销需密码 + 管理员注销任意用户）
   app.use(`${env.API_PREFIX}/account`, accountRouter)
+
+  // 私信（含好友邀请 REST 接口）
+  app.use(`${env.API_PREFIX}/dm`, dmRouter)
 
   // ============================================
   // Add your domain module routes here

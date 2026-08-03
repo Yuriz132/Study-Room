@@ -1,7 +1,11 @@
 import { Server, Socket } from 'socket.io'
-import { getUserByToken } from './auth'
+import { Router, type Request, type Response } from 'express'
+import { getUserByToken, authMiddleware } from './auth'
 import { loadGraph } from './friends'
 import { appendDm, markRead, convKey, loadDm, type DmMessage } from './dmStore'
+
+// 供 REST 邀请接口广播使用的 io 引用（在 registerDm 中赋值）
+let dmIo: Server | null = null
 
 // ============================================
 // 私信（1v1）实时模块
@@ -21,6 +25,7 @@ async function areFriends(a: string, b: string): Promise<boolean> {
 }
 
 export function registerDm(io: Server): void {
+  dmIo = io
   io.on('connection', async (socket: Socket) => {
     const token = (socket.handshake.auth && (socket.handshake.auth as Record<string, unknown>).token) as string | undefined
     const me = token ? (await getUserByToken(token))?.username : null
@@ -78,3 +83,37 @@ export function registerDm(io: Server): void {
     })
   })
 }
+
+// ============================================
+// 私信邀请（REST）：好友一起学 / 好友单词PK 的邀请通过私信送达
+// 前端在好友列表/用户页点击「一起学/邀TA PK」时调用，对方在私信里点击即可加入。
+// 这样不依赖对方当前是否打开了某个 socket，邀请以私信形式持久化并实时广播到会话房间。
+// ============================================
+export const dmRouter: Router = Router()
+dmRouter.use(authMiddleware)
+
+dmRouter.post('/invite', async (req: Request, res: Response) => {
+  const me = (req as Request & { user?: { username: string } }).user?.username
+  if (!me) return res.status(401).json({ message: '未登录' })
+  const to = String((req.body as { to?: unknown }).to || '').trim()
+  const action: 'study' | 'pk' = (req.body as { action?: unknown }).action === 'pk' ? 'pk' : 'study'
+  if (!to || to === me) return res.status(400).json({ message: '参数错误' })
+  if (!(await areFriends(me, to))) return res.status(403).json({ message: '你们还不是好友，无法邀请' })
+
+  const conv = convKey(me, to)
+  const text = action === 'pk' ? `${me} 邀请你一起单词PK` : `${me} 邀请你一起学习`
+  const msg: DmMessage = {
+    id: genId(),
+    conv,
+    from: me,
+    to,
+    text,
+    type: 'invite',
+    action,
+    timestamp: Date.now(),
+    read: false,
+  }
+  await appendDm(msg)
+  if (dmIo) dmIo.to('dm:' + conv).emit('dm:message', msg)
+  return res.json({ ok: true })
+})

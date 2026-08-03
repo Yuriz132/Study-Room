@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { UserPlus, Check, X, Swords, BookOpen, Search, Loader2, UserMinus, Users } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useFriendIndicators } from '@/context/FriendIndicatorContext'
+import { usePresence } from '@/context/PresenceContext'
+import { cn } from '@/lib/utils'
 import {
   apiGetFriends, apiFriendRequest, apiFriendAccept, apiFriendReject, apiFriendRemove,
-  apiGetUser, type FriendRelations, type PublicUser,
+  apiGetUser, apiSendDmInvite, type FriendRelations, type PublicUser,
 } from '@/lib/authApi'
-import { emitPk, getPkSocket } from '@/lib/pkSocket'
 import { getErrorMessage } from '@/lib/api-client'
 
 function LetterAvatar({ name, size = 40 }: { name: string; size?: number }) {
@@ -29,6 +30,7 @@ export default function FriendsPage() {
   const navigate = useNavigate()
   const { user, isAuthed } = useAuth()
   const { unreadByFriend } = useFriendIndicators()
+  const { isOnline } = usePresence()
   const [confirming, setConfirming] = useState('')
   const [rel, setRel] = useState<FriendRelations | null>(null)
   const [loading, setLoading] = useState(true)
@@ -73,8 +75,9 @@ export default function FriendsPage() {
     setSearching(false)
   }
 
-  const openStudy = (name: string) => navigate('/study/' + encodeURIComponent(name))
-  const openPk = (name: string) => { getPkSocket(localStorage.getItem('auth_token')); emitPk('pk:invite', { targetUsername: name, mode: 'human' }); navigate('/pk?invited=' + encodeURIComponent(name)) }
+  // 好友邀请改为「私信送达」：点击后给对方发一条私信邀请，对方在私信里点击即可加入
+  const openStudy = (name: string) => { void apiSendDmInvite(name, 'study'); navigate('/study/' + encodeURIComponent(name)) }
+  const openPk = (name: string) => { void apiSendDmInvite(name, 'pk'); navigate('/pk?invited=' + encodeURIComponent(name)) }
 
   if (!isAuthed) {
     return (
@@ -152,7 +155,10 @@ export default function FriendsPage() {
               <div className="space-y-2">
                 {rel.incoming.map((name) => (
                   <div key={name} className="flex items-center gap-3 rounded-2xl g-border g-panel p-3">
-                    <LetterAvatar name={name} />
+                    <span className="relative inline-flex shrink-0">
+                      <LetterAvatar name={name} />
+                      <span className={cn('absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-card', isOnline(name) ? 'bg-emerald-500' : 'bg-muted-foreground/40')} />
+                    </span>
                     <button onClick={() => navigate('/user/' + encodeURIComponent(name))} className="flex-1 truncate text-left text-sm font-medium text-foreground hover:underline">{name}</button>
                     <button onClick={() => act(() => apiFriendAccept(name), 'acc:' + name)} disabled={busy === 'acc:' + name} className="inline-flex items-center gap-1 rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60">
                       <Check className="h-3.5 w-3.5" /> 接受
@@ -177,7 +183,10 @@ export default function FriendsPage() {
                 return (
                 <div key={name} className="flex items-center gap-3 rounded-2xl g-border g-panel p-3">
                   <button onClick={() => navigate('/dm/' + encodeURIComponent(name))} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                    <LetterAvatar name={name} />
+                    <span className="relative inline-flex shrink-0">
+                      <LetterAvatar name={name} />
+                      <span className={cn('absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-card', isOnline(name) ? 'bg-emerald-500' : 'bg-muted-foreground/40')} />
+                    </span>
                     <span className="relative truncate text-sm font-medium text-foreground">
                       {name}
                       {unread > 0 && (

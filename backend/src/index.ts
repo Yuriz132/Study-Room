@@ -5,6 +5,7 @@ import { registerPk } from './modules/pk'
 import { registerChat } from './modules/chat'
 import { registerStudy } from './modules/study'
 import { registerDm } from './modules/dm'
+import { registerPresence } from './modules/presence'
 import { env } from './config/env'
 import { logger } from './config/logger'
 
@@ -23,6 +24,7 @@ const startServer = async () => {
     registerChat(io)
     registerStudy(io)
     registerDm(io)
+    registerPresence(io)
 
     httpServer.listen(env.PORT, () => {
       // Only show minimal startup info in development

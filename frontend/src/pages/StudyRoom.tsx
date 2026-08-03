@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Send, Circle } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { usePresence } from '@/context/PresenceContext'
 import { useStudy, type StudyMsg } from '@/hooks/use-study'
 
 function readCount(key: string): number {
@@ -31,8 +32,10 @@ export default function StudyRoomPage() {
   const { friend = '' } = useParams()
   const navigate = useNavigate()
   const { user, isAuthed } = useAuth()
+  const { isOnline } = usePresence()
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
   const { joined, peer, peerOnline, messages, peerProgress, err, send, sendProgress } = useStudy(token, friend)
+  const friendOnline = isOnline(friend)
 
   const [text, setText] = useState('')
   const [selfCount, setSelfCount] = useState(0)
@@ -82,7 +85,7 @@ export default function StudyRoomPage() {
         <div className="min-w-0">
           <h1 className="truncate text-lg font-bold text-foreground">和 {friend} 一起学</h1>
           <p className="text-[11px] text-muted-foreground/70">
-            {joined ? (peerOnline ? '对方在线，进度实时同步' : '等待对方进入…') : '正在进入学习房…'}
+            {joined ? (peerOnline ? '对方在线，进度实时同步' : (friendOnline ? '对方在线，等待进入学习房…' : '对方当前不在线，可留言邀请')) : '正在进入学习房…'}
           </p>
         </div>
       </header>
@@ -92,7 +95,7 @@ export default function StudyRoomPage() {
       {/* 进度对比 */}
       <div className="flex gap-2">
         <ProgressCard title={`我（${user}）`} count={selfCount} online />
-        <ProgressCard title={peer || friend} count={peerProgress?.payload?.known ?? 0} online={peerOnline} />
+        <ProgressCard title={peer || friend} count={peerProgress?.payload?.known ?? 0} online={friendOnline} />
       </div>
       <p className="mt-1 px-1 text-[10px] text-muted-foreground/60">
         我收藏 {selfStarred} · 对方收藏 {peerProgress?.payload?.starred ?? 0}

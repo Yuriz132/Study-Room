@@ -4,11 +4,10 @@ import { ArrowLeft, UserPlus, Check, X, Swords, BookOpen, Star, Trophy, MessageS
 import { useAuth } from '@/context/AuthContext'
 import {
   apiGetUser, apiFriendStatus, apiFriendRequest, apiFriendAccept, apiFriendReject, apiFriendRemove,
-  apiUpdateSignature,
+  apiUpdateSignature, apiSendDmInvite,
   type PublicUser, type FriendStatus,
 } from '@/lib/authApi'
 import apiClient from '@/lib/api-client'
-import { getPkSocket } from '@/lib/pkSocket'
 import { getErrorMessage } from '@/lib/api-client'
 
 interface ForumPostLite {
@@ -121,13 +120,15 @@ export default function UserPage() {
     setBusy(false)
   }
 
+  // 好友邀请改为「私信送达」：给对方发一条私信邀请，对方在私信里点击即可加入
   const invitePk = () => {
-    const token = localStorage.getItem('auth_token')
-    const sock = getPkSocket(token)
-    sock?.emit('pk:invite', { targetUsername: username, mode: 'human' })
+    void apiSendDmInvite(username, 'pk')
     navigate('/pk?invited=' + encodeURIComponent(username))
   }
-  const studyTogether = () => navigate('/study/' + encodeURIComponent(username))
+  const studyTogether = () => {
+    void apiSendDmInvite(username, 'study')
+    navigate('/study/' + encodeURIComponent(username))
+  }
 
   const saveSig = async () => {
     setSigSaving(true)
