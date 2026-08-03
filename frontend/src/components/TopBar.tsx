@@ -17,7 +17,7 @@ export default function TopBar({ title, subtitle, onBack, right }: TopBarProps) 
     else navigate(-1);
   };
   return (
-    <header className="sticky top-0 z-30 -mx-4 mb-4 border-b g-border g-nav px-4 py-3 backdrop-blur-xl">
+    <header className="mb-4">
       <div className="flex items-center gap-2">
         {onBack !== undefined && (
           <button
@@ -29,8 +29,8 @@ export default function TopBar({ title, subtitle, onBack, right }: TopBarProps) 
           </button>
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-bold text-foreground">{title}</h1>
-          {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
+          <h1 className="truncate text-2xl font-bold text-foreground">{title}</h1>
+          {subtitle && <p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p>}
         </div>
         {right}
       </div>
