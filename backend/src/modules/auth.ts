@@ -125,7 +125,7 @@ function hashPassword(password: string): { salt: string; passwordHash: string } 
   return { salt, passwordHash }
 }
 
-function verifyPassword(password: string, salt: string, passwordHash: string): boolean {
+export function verifyPassword(password: string, salt: string, passwordHash: string): boolean {
   const candidate = scryptSync(password, salt, 64)
   const expected = Buffer.from(passwordHash, 'hex')
   if (candidate.length !== expected.length) return false

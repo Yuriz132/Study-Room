@@ -90,6 +90,18 @@ export async function apiBanAvatar(username: string, banned: boolean): Promise<{
   return data
 }
 
+/** 注销当前账号（需密码确认） */
+export async function apiDeleteAccount(password: string): Promise<{ ok: boolean }> {
+  const { data } = await apiClient.delete<{ ok: boolean }>('/account', { data: { password } })
+  return data
+}
+
+/** 管理员注销任意用户 */
+export async function apiAdminDeleteUser(username: string): Promise<{ ok: boolean }> {
+  const { data } = await apiClient.delete<{ ok: boolean }>(`/account/admin/${encodeURIComponent(username)}`)
+  return data
+}
+
 export async function apiGetProgress(): Promise<CloudProgress> {
   const { data } = await apiClient.get<CloudProgress>('/progress')
   return data

@@ -38,7 +38,7 @@ export async function loadGraph(): Promise<FriendGraph> {
   return graphCache
 }
 
-async function saveGraph(g: FriendGraph): Promise<void> {
+export async function saveGraph(g: FriendGraph): Promise<void> {
   graphCache = g
   await fs.mkdir(DATA_DIR, { recursive: true })
   await fs.writeFile(FRIENDS_FILE, JSON.stringify(g, null, 2), 'utf-8')

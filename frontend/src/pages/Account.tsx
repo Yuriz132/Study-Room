@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, LogOut, Upload, Trash2, AlertCircle, Pencil } from "lucide-react";
+import { User, LogOut, Upload, Trash2, AlertCircle, AlertTriangle, Pencil } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { apiDeleteAccount } from "@/lib/authApi";
 import { compressAvatar } from "@/context/SettingsContext";
 import { cn } from "@/lib/utils";
 import { FlyIn } from "@/components/MotionPrimitives";
@@ -17,6 +18,25 @@ export default function Account() {
   const [sigEditing, setSigEditing] = useState(false);
   const [sigDraft, setSigDraft] = useState("");
   const [sigSaving, setSigSaving] = useState(false);
+  const [delOpen, setDelOpen] = useState(false);
+  const [delPw, setDelPw] = useState("");
+  const [delErr, setDelErr] = useState("");
+  const [delBusy, setDelBusy] = useState(false);
+
+  const handleDelete = async () => {
+    if (!delPw) { setDelErr("请输入密码"); return; }
+    try {
+      setDelBusy(true);
+      setDelErr("");
+      await apiDeleteAccount(delPw);
+      logout();
+      navigate("/");
+    } catch (e: any) {
+      setDelErr(e?.response?.data?.message || "注销失败，请重试");
+    } finally {
+      setDelBusy(false);
+    }
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -161,6 +181,23 @@ export default function Account() {
           <LogOut className="h-4 w-4" /> 退出登录
         </button>
 
+        {hasCloud && (
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-rose-500">
+              <AlertTriangle className="h-4 w-4" /> 危险操作
+            </div>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              注销账号将永久删除你的云端资料、好友关系与私信记录，且无法恢复。
+            </p>
+            <button
+              onClick={() => { setDelPw(""); setDelErr(""); setDelOpen(true); }}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-2.5 text-sm font-medium text-white transition active:scale-95"
+            >
+              <Trash2 className="h-4 w-4" /> 注销账号
+            </button>
+          </div>
+        )}
+
         {/* 编辑签名弹窗 */}
         {sigEditing && (
           <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-4" onClick={() => setSigEditing(false)}>
@@ -184,6 +221,32 @@ export default function Account() {
             </div>
           </div>
         )}
+        {/* 注销账号密码确认 */}
+        {delOpen && (
+          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-4" onClick={() => setDelOpen(false)}>
+            <div className="w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <h3 className="mb-2 text-base font-semibold text-foreground">确认注销账号</h3>
+              <p className="text-sm text-muted-foreground">请输入登录密码以确认注销，此操作不可恢复。</p>
+              <input
+                type="password"
+                value={delPw}
+                onChange={(e) => setDelPw(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !delBusy) handleDelete(); }}
+                placeholder="登录密码"
+                autoFocus
+                className="mt-3 w-full rounded-xl g-border bg-transparent px-3 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-rose-500/40"
+              />
+              {delErr && <p className="mt-2 text-xs text-rose-500">{delErr}</p>}
+              <div className="mt-4 flex gap-2">
+                <button onClick={() => setDelOpen(false)} className="flex-1 rounded-xl g-border g-panel py-2.5 text-sm text-muted-foreground">取消</button>
+                <button onClick={handleDelete} disabled={delBusy} className="flex-1 rounded-xl bg-rose-500 py-2.5 text-sm font-medium text-white disabled:opacity-60">
+                  {delBusy ? "注销中…" : "确认注销"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </FlyIn>
     </div>
   );

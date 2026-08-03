@@ -13,6 +13,7 @@ import { leaderboardRouter } from './modules/leaderboard'
 import { publicNotesRouter } from './modules/public-notes'
 import { forumRouter } from './modules/forum'
 import { friendsRouter } from './modules/friends'
+import { accountRouter } from './modules/account'
 // ============================================
 // Add your domain module imports here
 // ============================================
@@ -63,6 +64,9 @@ export const createApp = (): Application => {
 
   // 好友关系（均需登录）
   app.use(env.API_PREFIX, friendsRouter)
+
+  // 账号注销（自注销需密码 + 管理员注销任意用户）
+  app.use(`${env.API_PREFIX}/account`, accountRouter)
 
   // ============================================
   // Add your domain module routes here

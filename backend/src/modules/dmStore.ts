@@ -84,3 +84,15 @@ export async function computeUnread(me: string): Promise<{ total: number; byFrie
   }
   return { total, byFriend }
 }
+
+export async function removeUserMessages(username: string): Promise<void> {
+  const s = await loadDm()
+  let changed = false
+  for (const conv of Object.keys(s)) {
+    if (conv.split('__').includes(username)) {
+      delete s[conv]
+      changed = true
+    }
+  }
+  if (changed) await saveDm(s)
+}
