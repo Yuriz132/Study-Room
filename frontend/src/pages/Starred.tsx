@@ -9,11 +9,17 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { aiAnalyzeNote } from "@/lib/ai";
 import { StudyAssistantChat } from "@/components/StudyAssistantChat";
 import { RequireLogin } from "@/components/RequireLogin";
-import { FileText, Headphones, Library, BookOpen, Wrench, Sparkles, FileQuestion } from "lucide-react";
+import { FileText, Headphones, Library, BookOpen, Wrench, Sparkles, FileQuestion, Gift, CalendarCheck, X } from "lucide-react";
 import type { Word } from "@/types/word";
 import type { Note } from "@/lib/authApi";
 
 type Tab = "starred" | "known" | "wrong" | "notes";
+
+// 签到满 7 天可领取的会员权益清单
+const CHECKIN_MEMBERS = [
+  "腾讯视频VIP", "爱奇艺黄金VIP", "优酷视频VIP", "芒果TV会员",
+  "咪咕视频钻石会员", "QQ音乐绿钻", "酷狗音乐会员", "网易云音乐VIP周卡",
+];
 
 export default function Starred() {
   const [tab, setTab] = useState<Tab>("starred");
@@ -36,8 +42,45 @@ export default function Starred() {
   const [preview, setPreview] = useState<string | null>(null);
   const [showAI, setShowAI] = useState(false);
 
+  // 签到领会员（本地记录连续签到天数，奖励需满 7 天后找管理员手动领取）
+  const [showCheckin, setShowCheckin] = useState(false);
+  const [checkinDates, setCheckinDates] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("hv_checkin_dates") || "[]"); } catch { return []; }
+  });
+  const todayStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+  const alreadyToday = checkinDates.includes(todayStr);
+  const doCheckin = () => {
+    if (alreadyToday) return;
+    const next = [...checkinDates, todayStr];
+    try { localStorage.setItem("hv_checkin_dates", JSON.stringify(next)); } catch { /* noop */ }
+    setCheckinDates(next);
+  };
+  const consecutive = (() => {
+    const set = new Set(checkinDates);
+    if (set.size === 0) return 0;
+    const d = new Date();
+    if (!set.has(todayStr)) d.setDate(d.getDate() - 1);
+    let c = 0;
+    const fmt = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+    while (set.has(fmt(d))) { c++; d.setDate(d.getDate() - 1); }
+    return c;
+  })();
+
   return (
     <div className="hv-fade space-y-3 pt-2">
+      {/* 签到领会员入口（顶部横幅） */}
+      <button
+        onClick={() => setShowCheckin(true)}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-500 px-4 py-3 text-base font-bold text-white shadow-lg shadow-fuchsia-500/25 transition active:scale-[0.98]"
+      >
+        <Gift className="h-5 w-5" />
+        签到领会员
+        <span className="ml-1 rounded-full bg-white/25 px-2 py-0.5 text-[11px] font-semibold">连续 {consecutive}/7 天</span>
+      </button>
+
       <h1 className="text-xl font-bold text-foreground">收藏</h1>
       <p className="-mt-1 text-xs text-muted-foreground">
         生词 {starredWords.length} · 已学 {knownWords.length} · 错词 {wrong.length} · 笔记 {notes.length}
@@ -223,7 +266,61 @@ export default function Starred() {
 
       {/* 图片灯箱：点击笔记图片放大预览 / 保存 */}
       <ImageLightbox src={preview} onClose={() => setPreview(null)} />
-    </div>
+
+      {/* 签到领会员弹窗 */}
+      {showCheckin && (
+        <div
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          onClick={() => setShowCheckin(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl bg-card p-5 shadow-2xl sm:rounded-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-foreground">🎁 签到领会员</h3>
+              <button
+                onClick={() => setShowCheckin(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/40"
+                aria-label="关闭"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm leading-relaxed text-foreground/85">
+              用户签到满 <span className="font-bold text-primary">7 天</span> 即可找我领取以下其中一份会员权益（<span className="font-bold text-rose-500">名额仅限 1 份，最先完成签到者优先</span>）：
+            </p>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {CHECKIN_MEMBERS.map((m) => (
+                <div key={m} className="rounded-xl g-border g-panel px-3 py-2 text-center text-xs font-medium text-foreground">
+                  {m}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <CalendarCheck className="h-4 w-4 text-emerald-400" />
+              活动 8 月 5 号 开始
+            </div>
+
+            <div className="mt-4 flex items-center justify-between rounded-2xl bg-muted/30 px-4 py-3">
+              <div>
+                <div className="text-sm font-semibold text-foreground">已连续签到 {consecutive} 天</div>
+                <div className="text-[11px] text-muted-foreground">满 7 天即可领取</div>
+              </div>
+              <button
+                onClick={doCheckin}
+                disabled={alreadyToday}
+                className={"rounded-xl px-4 py-2 text-sm font-medium text-white transition active:scale-95 " + (alreadyToday ? "bg-muted-foreground/40" : "bg-primary")}
+              >
+                {alreadyToday ? "今日已签到 ✓" : "今日签到"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}    </div>
   );
 }
 
