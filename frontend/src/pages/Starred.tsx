@@ -8,11 +8,11 @@ import { speakWord } from "@/lib/speak";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { aiAnalyzeNote } from "@/lib/ai";
 import { StudyAssistantChat } from "@/components/StudyAssistantChat";
-import { FileText, Headphones, Library, BookOpen, Wrench } from "lucide-react";
+import { FileText, Headphones, Library, BookOpen, Wrench, Sparkles, FileQuestion } from "lucide-react";
 import type { Word } from "@/types/word";
 import type { Note } from "@/lib/authApi";
 
-type Tab = "starred" | "known" | "wrong" | "notes" | "assistant";
+type Tab = "starred" | "known" | "wrong" | "notes";
 
 export default function Starred() {
   const [tab, setTab] = useState<Tab>("starred");
@@ -33,6 +33,7 @@ export default function Starred() {
   const doneEditing = useCallback(() => setEditing(null), []);
   // 笔记图片预览（灯箱）
   const [preview, setPreview] = useState<string | null>(null);
+  const [showAI, setShowAI] = useState(false);
 
   return (
     <div className="hv-fade space-y-3 pt-2">
@@ -55,6 +56,8 @@ export default function Starred() {
             <QuickCard icon={<Headphones className="h-4 w-4 text-violet-400" />} title="随身听" subtitle="维护中" onClick={() => navigate("/listen")} />
             <QuickCard icon={<Library className="h-4 w-4 text-amber-400" />} title="自建词库" onClick={() => navigate("/custom")} />
             <QuickCard icon={<BookOpen className="h-4 w-4 text-sky-400" />} title="公共笔记" onClick={() => navigate("/public-notes")} />
+            <QuickCard icon={<Sparkles className="h-4 w-4 text-fuchsia-400" />} title="AI 助手" onClick={() => setShowAI((v) => !v)} />
+            <QuickCard icon={<FileQuestion className="h-4 w-4 text-rose-400" />} title="考题预测" subtitle="测试中不稳定" onClick={() => window.open("https://sanzizyf.asia/vs/text", "_blank", "noopener,noreferrer")} />
           </div>
         )}
         {q.trim() && <p className="text-xs text-muted-foreground">找到 {results.length} 个结果</p>}
@@ -74,13 +77,15 @@ export default function Starred() {
         </div>
       </div>
 
+      {/* AI 学习助手（顶部卡片展开，对话本地保存） */}
+      {showAI && <StudyAssistantChat />}
+
       {/* Tab 切换 */}
       <div className="flex rounded-2xl border g-border bg-card p-1">
         <TabBtn active={tab === "starred"} onClick={() => { setTab("starred"); doneEditing(); }} label="生词" count={starredWords.length} />
         <TabBtn active={tab === "known"} onClick={() => { setTab("known"); doneEditing(); }} label="已学" count={knownWords.length} />
         <TabBtn active={tab === "wrong"} onClick={() => { setTab("wrong"); doneEditing(); }} label="错词" count={wrong.length} />
         <TabBtn active={tab === "notes"} onClick={() => { setTab("notes"); doneEditing(); }} label="笔记" count={notes.length} />
-        <TabBtn active={tab === "assistant"} onClick={() => setTab("assistant")} label="AI 助手" />
       </div>
 
       {/* 生词（收藏） */}
@@ -210,9 +215,6 @@ export default function Starred() {
           </div>
         )
       )}
-
-      {/* AI 学习助手（对话本地保存） */}
-      {tab === "assistant" && <StudyAssistantChat />}
 
       {/* 图片灯箱：点击笔记图片放大预览 / 保存 */}
       <ImageLightbox src={preview} onClose={() => setPreview(null)} />
