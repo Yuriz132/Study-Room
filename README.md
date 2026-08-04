@@ -29,6 +29,7 @@
 | **沉浸式学习** (`ImmersiveLearn`) | 全屏沉浸背词，含「大家的灵光一现」社区灵感墙 |
 | **单词详情 + 评论** (`WordCard` / `WordComments`) | 单字释义、例句，以及用户对该词的讨论区 |
 | **收藏** (`Starred`) | 收藏单词 / 文章，集中复习 |
+| **错题合集** (`WrongBookPanel`) | 拍照 / 文本收集错题，支持建多个合集分别归类；每个合集内置**隔离的 AI 错题教练**（仅基于本合集错题分析薄弱点、出题、给建议） |
 
 ### 二、AI 智能功能 ⭐
 
@@ -39,6 +40,7 @@
 | **AI 英语文章** | `ArticleGen` | `POST /api/ai/chat` | 用你已掌握 / 已收藏的单词，生成适合专升本水平的英语短文，并自动存入收藏 |
 | **AI 个人学习总结** | `Summary` / `PersonalSummary` | `POST /api/ai/chat` | 基于真实学习数据（已学词数、掌握词数、连续天数）生成「有温度、可执行」的下一步建议 |
 | **AI 每日英语谚语** | 首页 (`Index`) | `POST /api/ai/chat` | 首页展示 AI 生成的英语谚语 + 中文注释，可在「更多设置」关闭 |
+| **错题合集 · AI 错题教练** | `WrongBookPanel` / `WrongBookChat` | `POST /api/wrongbook/:id/chat`、`POST /api/ai/vision/extract-words` | 每个合集的 AI 对话**隔离**——系统提示词只携带该合集的错题，不串台；支持「分析不足 / 生成知识点 / 生成新题 / 生成建议」一键指令；拍照的错题复用视觉模型提取题目原文 |
 
 > 所有 AI 调用都经由**后端代理**（`backend/src/modules/ai.ts`），API Key 只存在于服务端环境变量，绝不暴露到前端。
 
@@ -441,6 +443,7 @@ location /vs/socket.io/ { proxy_pass http://127.0.0.1:3000/socket.io/; /* + Upgr
 | 论坛 | `GET/POST /api/forum/posts`、板块筛选、`DELETE /api/forum/posts/admin/author/:author`（管理员清帖） |
 | 好友 | `GET/POST/DELETE /api/friends` |
 | 私信 | `GET/POST /api/dm`、`POST /api/dm/invite`（好友邀请） |
+| 错题合集 | `GET/POST /api/wrongbook`、`DELETE /api/wrongbook/:id`、`POST/DELETE /api/wrongbook/:id/items`、`POST /api/wrongbook/:id/chat`（均需登录；数据随账号持久化、跨设备同步） |
 | 系统 | `GET /api/system/health` |
 
 实时能力（Socket.IO）：在线状态、单词 PK 对战、私信、自习室共学、学习状态广播。

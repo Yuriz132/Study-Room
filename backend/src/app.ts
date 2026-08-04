@@ -15,6 +15,7 @@ import { forumRouter } from './modules/forum'
 import { friendsRouter } from './modules/friends'
 import { accountRouter } from './modules/account'
 import { dmRouter } from './modules/dm'
+import { wrongbookRouter } from './modules/wrongbook'
 // ============================================
 // Add your domain module imports here
 // ============================================
@@ -71,6 +72,9 @@ export const createApp = (): Application => {
 
   // 私信（含好友邀请 REST 接口）
   app.use(`${env.API_PREFIX}/dm`, dmRouter)
+
+  // 错题合集（拍照/文本收集 + 每个合集隔离的 AI 分析）
+  app.use(`${env.API_PREFIX}/wrongbook`, wrongbookRouter)
 
   // ============================================
   // Add your domain module routes here

@@ -8,12 +8,13 @@ import { speakWord } from "@/lib/speak";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { aiAnalyzeNote } from "@/lib/ai";
 import { StudyAssistantChat } from "@/components/StudyAssistantChat";
+import { WrongBookPanel } from "@/components/WrongBookPanel";
 import { RequireLogin } from "@/components/RequireLogin";
 import { FileText, Headphones, Library, BookOpen, Wrench, Sparkles, FileQuestion, Gift, CalendarCheck, X } from "lucide-react";
 import type { Word } from "@/types/word";
 import type { Note } from "@/lib/authApi";
 
-type Tab = "starred" | "known" | "wrong" | "notes";
+type Tab = "starred" | "known" | "wrong" | "notes" | "wrongbook";
 
 // 签到满 7 天可领取的会员权益清单
 const CHECKIN_MEMBERS = [
@@ -141,6 +142,7 @@ export default function Starred() {
         <TabBtn active={tab === "known"} onClick={() => { setTab("known"); doneEditing(); }} label="已学" count={knownWords.length} />
         <TabBtn active={tab === "wrong"} onClick={() => { setTab("wrong"); doneEditing(); }} label="错词" count={wrong.length} />
         <TabBtn active={tab === "notes"} onClick={() => { setTab("notes"); doneEditing(); }} label="笔记" count={notes.length} />
+        <TabBtn active={tab === "wrongbook"} onClick={() => { setTab("wrongbook"); doneEditing(); }} label="错题集" />
       </div>
 
       {/* 生词（收藏） */}
@@ -269,6 +271,13 @@ export default function Starred() {
             )}
           </div>
         )
+      )}
+
+      {/* 错题合集（拍照/文本收集 + 每个合集隔离的 AI 分析） */}
+      {tab === "wrongbook" && (
+        <RequireLogin feature="错题合集">
+          <WrongBookPanel />
+        </RequireLogin>
       )}
 
       {/* 图片灯箱：点击笔记图片放大预览 / 保存 */}

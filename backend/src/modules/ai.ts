@@ -12,15 +12,15 @@ import { z } from 'zod'
 // 基础地址可经环境变量覆盖（便于切换网关 / 本地代理）
 const AI_BASE = process.env.AI_BASE_URL || 'https://api.agnes-ai.cn/v1'
 // 优先使用 Agnes 密钥；旧 Step Fun 密钥作为回退（若仍配置）
-const AI_API_KEY = process.env.AGNES_API_KEY || process.env.STEP_API_KEY || ''
+export const AI_API_KEY = process.env.AGNES_API_KEY || process.env.STEP_API_KEY || ''
 
 // 默认模型：agnes-2.5-flash 同时支持文本对话与图片视觉理解
 const CHAT_MODEL = process.env.AI_CHAT_MODEL || 'agnes-2.5-flash'
-const VISION_MODEL = process.env.AI_VISION_MODEL || 'agnes-2.5-flash'
+export const VISION_MODEL = process.env.AI_VISION_MODEL || 'agnes-2.5-flash'
 
 // agnes-2.5-flash 为快速模型，使用最低推理预算，直接输出答案，更快更省额度
 // 注意：Agnes 仅接受 low / medium / high，不支持 openai 的 "none"
-const REASONING_EFFORT = process.env.AI_REASONING_EFFORT || 'low'
+export const REASONING_EFFORT = process.env.AI_REASONING_EFFORT || 'low'
 
 // 重试配置：网络抖动 / 上游 5xx 兜底
 const MAX_RETRIES = 3
@@ -44,7 +44,7 @@ function normalizeModel(model?: string): string {
  * 仅对可重试错误重试：网络异常(fetch failed / timeout) 与 5xx 状态码。
  * 4xx（含 400 参数错误）不重试，直接抛出，由调用方处理。
  */
-async function fetchAI(
+export async function fetchAI(
   path: string,
   body: any,
   attempt = 0,

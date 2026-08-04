@@ -60,6 +60,25 @@ interface Note {
   updatedAt: number
 }
 
+/** 错题合集中的单条错题（拍照识别或手动输入） */
+export interface WrongItem {
+  id: string
+  text: string
+  /** 拍照来源时保存压缩后的图片 data URL，便于回看原题 */
+  imageUrl?: string
+  source: 'photo' | 'text'
+  createdAt: number
+}
+
+/** 错题合集：可建多个，每个合集带隔离的 AI 分析与对话 */
+export interface WrongCollection {
+  id: string
+  name: string
+  createdAt: number
+  items: WrongItem[]
+  messages: { role: 'user' | 'assistant'; text: string; createdAt: number }[]
+}
+
 interface ProgressData {
   starred: number[]
   known: number[]
@@ -84,6 +103,8 @@ export interface User {
   /** 个性签名（用户自定义，≤80 字） */
   signature?: string
   progress: ProgressData
+  /** 错题合集（云端持久化，每个用户独立） */
+  wrongCollections?: WrongCollection[]
 }
 
 type AuthedRequest = Request & { user?: User }
