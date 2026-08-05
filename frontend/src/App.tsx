@@ -43,7 +43,7 @@ const navItems = [
 ];
 
 function NavBar() {
-  const { has } = useFriendIndicators()
+  const { requests, unread, communityUnread } = useFriendIndicators()
   const { pathname } = useLocation();
   const motionOn = useMotionEnabled();
   const isImmersive = pathname === "/immersive";
@@ -108,9 +108,16 @@ function NavBar() {
                   }
                 />
               )}
-              {/* 红点：放在 NavLink 内层（h-11 w-11 有固定尺寸），确保 -right/-top 偏移正确 */}
-              {n.to === '/friends' && has && (
-                <span className="absolute right-0 top-0 h-2.5 w-2.5 translate-x-[2px] -translate-y-[2px] rounded-full bg-rose-500 ring-2 ring-[var(--glass-nav)]" />
+              {/* 未读数字徽标：放在 NavLink 内层（h-11 w-11 有固定尺寸），确保 -right/-top 偏移正确 */}
+              {n.to === '/community' && communityUnread > 0 && (
+                <span className="absolute -right-1 -top-1 z-20 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white shadow ring-2 ring-[var(--glass-nav)]">
+                  {communityUnread > 99 ? '99+' : communityUnread}
+                </span>
+              )}
+              {n.to === '/friends' && requests + unread > 0 && (
+                <span className="absolute -right-1 -top-1 z-20 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white shadow ring-2 ring-[var(--glass-nav)]">
+                  {requests + unread > 99 ? '99+' : requests + unread}
+                </span>
               )}
               {/* 图标：固定槽位内交叉淡入淡出，旧图标淡出、新图标淡入。
                   reduced-motion 下直接渲染静态图标，避免割裂。 */}

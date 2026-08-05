@@ -265,6 +265,8 @@ function ForumView({
       n.add(id)
       try {
         localStorage.setItem('hv:readPosts', JSON.stringify(Array.from(n)))
+        // 通知底部导航的「社区」未读徽标立即重算
+        window.dispatchEvent(new Event('hv:forum-read'))
       } catch {
         /* noop */
       }

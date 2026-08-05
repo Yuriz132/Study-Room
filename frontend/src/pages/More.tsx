@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Timer, Sparkles, BookOpen, Layers, Volume2, Lock, Bell, Gauge, Trash2, RefreshCcw, Calendar, ChevronRight, Swords, Zap, Sun, Moon, Monitor, Palette, PenTool, UserCircle2, Image as ImageIcon, X, Shield, CheckCircle, XCircle } from "lucide-react";
+import { Timer, Sparkles, BookOpen, Layers, Volume2, Lock, Bell, Gauge, Trash2, RefreshCcw, Calendar, ChevronRight, ChevronDown, Swords, Zap, Sun, Moon, Monitor, Palette, PenTool, UserCircle2, Image as ImageIcon, X, Shield, CheckCircle, XCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { ANIMATION_PRESETS } from "@/components/MotionPrimitives";
 import { Switch } from "@/components/ui/switch";
 import { useSettings, type Theme, type Skin, compressWallpaper } from "@/context/SettingsContext";
 import { useAuth } from "@/context/AuthContext";
 import { apiAdminDeleteUser, apiAdminDeleteUserPosts, apiAdminDeleteUserComments } from "@/lib/authApi";
 import { Leaderboard } from "@/components/Leaderboard";
+import { LegalTermsContent } from "@/components/LegalTerms";
 
 export default function More() {
   const navigate = useNavigate();
@@ -34,6 +36,8 @@ export default function More() {
   const [postsMsg, setPostsMsg] = useState("");
   const [cmtsUser, setCmtsUser] = useState("");
   const [cmtsMsg, setCmtsMsg] = useState("");
+  // 服务协议与隐私政策（关于作者下方折叠）
+  const [showLegal, setShowLegal] = useState(false);
 
   return (
     <div className="min-h-screen pb-24 pt-6">
@@ -293,7 +297,24 @@ export default function More() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-xs text-muted-foreground/60">英语学习室</p>
+        {/* 服务协议与隐私政策（折叠，点击展开） */}
+        <button
+          onClick={() => setShowLegal((v) => !v)}
+          className="mb-2 flex w-full items-center justify-between rounded-2xl border g-border g-panel px-3.5 py-3 transition hover:g-panel active:scale-[0.99]"
+        >
+          <span className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-lg">📜</div>
+            <span className="text-sm font-medium text-foreground">服务协议与隐私政策</span>
+          </span>
+          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", showLegal && "rotate-180")} />
+        </button>
+        {showLegal && (
+          <div className="mb-2 rounded-2xl border g-border g-panel px-3.5 py-3">
+            <LegalTermsContent />
+          </div>
+        )}
+
+        <p className="mt-8 text-center text-xs text-muted-foreground/60">B501班学习室</p>
       </div>
     </div>
   );
