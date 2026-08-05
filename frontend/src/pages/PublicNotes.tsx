@@ -11,21 +11,9 @@ import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 import { compressImageResilient } from '@/lib/image'
 import { getErrorMessage } from '@/lib/api-client'
+import { timeAgoShort } from '@/lib/time'
 
 const MAX_IMAGES = 9
-
-function timeAgo(ts: number): string {
-  const diff = Date.now() - ts
-  const m = Math.floor(diff / 60000)
-  if (m < 1) return '刚刚'
-  if (m < 60) return `${m} 分钟前`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h} 小时前`
-  const d = Math.floor(h / 24)
-  if (d < 30) return `${d} 天前`
-  const date = new Date(ts)
-  return `${date.getMonth() + 1}月${date.getDate()}日`
-}
 
 export default function PublicNotes() {
   const [notes, setNotes] = useState<PublicNote[]>([])
@@ -334,7 +322,7 @@ export default function PublicNotes() {
                 )}
                 <div className="mt-2.5 flex items-center justify-between">
                   <span className="text-[11px] text-muted-foreground/60">
-                    {n.author} · {timeAgo(n.updatedAt)}
+                    {n.author} · {timeAgoShort(n.updatedAt)}
                   </span>
                   <div className="flex items-center gap-0.5">
                     {isAdmin && n.hidden && (

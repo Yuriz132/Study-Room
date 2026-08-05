@@ -4,19 +4,7 @@ import { Loader2, MessageCircle } from 'lucide-react';
 import { fetchCommunity, commentImageUrl, type Comment } from '@/lib/comments';
 import { ImageLightbox } from '@/components/ImageLightbox';
 import { allWords } from '@/lib/words-data';
-
-function timeAgo(ts: number): string {
-  const diff = Date.now() - ts;
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return '刚刚';
-  if (m < 60) return `${m} 分钟前`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} 小时前`;
-  const d = Math.floor(h / 24);
-  if (d < 30) return `${d} 天前`;
-  const date = new Date(ts);
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
-}
+import { timeAgoShort } from '@/lib/time';
 
 function wordLabel(wordId: number): { text: string; to: string } {
   if (wordId === -1) return { text: '留言板', to: '/community' };
@@ -102,7 +90,7 @@ export function CommunityFeed() {
                     </div>
                   )}
                   <p className="mt-1 text-[11px] text-muted-foreground/60">
-                    {c.author} · {timeAgo(c.createdAt)}
+                    {c.author} · {timeAgoShort(c.createdAt)}
                   </p>
                 </div>
               </div>

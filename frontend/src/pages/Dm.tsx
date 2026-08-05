@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useDm, type DmMessage } from '@/hooks/use-dm'
 import { usePresence } from '@/context/PresenceContext'
 import { ChatDisclaimer } from '@/components/ChatDisclaimer'
+import { timeAgoShort } from '@/lib/time'
 
 export default function Dm() {
   const { username = '' } = useParams()
@@ -27,10 +28,7 @@ export default function Dm() {
     setText('')
   }
 
-  const fmtTime = (ts: number) => {
-    const d = new Date(ts)
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-  }
+  const fmtTime = (ts: number) => timeAgoShort(ts)
 
   if (!isAuthed) {
     return (

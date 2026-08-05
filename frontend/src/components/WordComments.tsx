@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { compressImageResilient } from '@/lib/image';
 import { getErrorMessage } from '@/lib/api-client';
+import { timeAgoShort } from '@/lib/time';
 
 interface WordCommentsProps {
   wordId: number;
@@ -26,16 +27,7 @@ interface WordCommentsProps {
 }
 
 function timeAgo(ts: number): string {
-  const diff = Date.now() - ts;
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return '刚刚';
-  if (m < 60) return `${m} 分钟前`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} 小时前`;
-  const d = Math.floor(h / 24);
-  if (d < 30) return `${d} 天前`;
-  const date = new Date(ts);
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
+  return timeAgoShort(ts);
 }
 
 /** 递归求一条评论所属的「根评论」ID（用于把任意层级的回复都归到根评论下，避免无限缩进） */

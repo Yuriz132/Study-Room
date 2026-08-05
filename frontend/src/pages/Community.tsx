@@ -22,19 +22,11 @@ import { useSettings } from '@/context/SettingsContext'
 import { ChatDisclaimer } from '@/components/ChatDisclaimer'
 import { useChat } from '@/hooks/use-chat'
 import { usePresence } from '@/context/PresenceContext'
+import { timeAgoShort } from '@/lib/time'
 
-/* ---- 时间格式化 ---- */
+/* ---- 时间格式化（抖音风格：刚刚 / X分钟前 / X小时前 / X天前，更早显示 M-D） ---- */
 function timeAgo(ts: number): string {
-  const diff = Date.now() - ts
-  const m = Math.floor(diff / 60000)
-  if (m < 1) return '刚刚'
-  if (m < 60) return `${m} 分钟前`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h} 小时前`
-  const d = Math.floor(h / 24)
-  if (d < 30) return `${d} 天前`
-  const date = new Date(ts)
-  return `${date.getMonth() + 1}月${date.getDate()}日`
+  return timeAgoShort(ts)
 }
 
 // 头像点击跳转用户主页（聊天 / 帖子 / 评论通用）
@@ -933,10 +925,8 @@ function ChatRoom({ onBack }: { onBack: () => void }) {
     setText('')
   }
 
-  const fmtTime = (ts: number) => {
-    const d = new Date(ts)
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-  }
+  // 聊天消息时间（抖音风格）
+  const fmtTime = (ts: number) => timeAgoShort(ts)
 
   // 用户颜色哈希（稳定色板）
   const userColor = (name: string) => {

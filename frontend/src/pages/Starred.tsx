@@ -12,6 +12,7 @@ import { WrongBookPanel } from "@/components/WrongBookPanel";
 import { RequireLogin } from "@/components/RequireLogin";
 import { useAuth } from "@/context/AuthContext";
 import { getErrorMessage } from "@/lib/api-client";
+import { timeAgoShort } from "@/lib/time";
 import {
   fetchCheckinStatus, doCheckin as checkinNow, migrateCheckin, fetchCheckinLeaderboard,
   type CheckinStatus, type CheckinLeaderEntry,
@@ -276,7 +277,7 @@ export default function Starred() {
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-semibold">{n.title || "无标题"}</div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        {new Date(n.updatedAt).toLocaleDateString("zh-CN")}
+                        {timeAgoShort(n.updatedAt)}
                       </div>
                     </div>
                     <button
