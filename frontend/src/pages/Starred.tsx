@@ -1,5 +1,5 @@
-import { useMemo, useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState, useRef, useCallback, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { allWords, searchWords } from "@/lib/words-data";
 import { useStarred, useKnown } from "@/hooks/use-storage";
 import { useWrongWords } from "@/hooks/use-wrong-words";
@@ -10,7 +10,13 @@ import { aiAnalyzeNote } from "@/lib/ai";
 import { StudyAssistantChat } from "@/components/StudyAssistantChat";
 import { WrongBookPanel } from "@/components/WrongBookPanel";
 import { RequireLogin } from "@/components/RequireLogin";
-import { FileText, Headphones, Library, BookOpen, Wrench, Sparkles, FileQuestion, Gift, CalendarCheck, X } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { getErrorMessage } from "@/lib/api-client";
+import {
+  fetchCheckinStatus, doCheckin as checkinNow, migrateCheckin, fetchCheckinLeaderboard,
+  type CheckinStatus, type CheckinLeaderEntry,
+} from "@/lib/checkin";
+import { FileText, Headphones, Library, BookOpen, Wrench, Sparkles, FileQuestion, Gift, CalendarCheck, X, Trophy, Loader2, ChevronDown } from "lucide-react";
 import type { Word } from "@/types/word";
 import type { Note } from "@/lib/authApi";
 
@@ -43,44 +49,81 @@ export default function Starred() {
   const [preview, setPreview] = useState<string | null>(null);
   const [showAI, setShowAI] = useState(false);
 
-  // 签到领会员（本地记录连续签到天数，奖励需满 3 天后找管理员手动领取）
+  // 签到领会员（服务器端记账：连续签到天数、谁先满 3 天以服务器时间戳为准）
+  const { isAuthed, isAdmin } = useAuth();
   const [showCheckin, setShowCheckin] = useState(false);
-  const [checkinDates, setCheckinDates] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("hv_checkin_dates") || "[]"); } catch { return []; }
-  });
-  const todayStr = (() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  })();
-  const alreadyToday = checkinDates.includes(todayStr);
-  // 签到窗口：每天仅 6:30 - 7:00 开放（本地时间）
-  const inWindow = (() => {
-    const n = new Date();
-    const mins = n.getHours() * 60 + n.getMinutes();
-    return mins >= 6 * 60 + 30 && mins <= 7 * 60;
-  })();
-  const doCheckin = () => {
-    if (alreadyToday || !inWindow) return;
-    const next = [...checkinDates, todayStr];
-    try { localStorage.setItem("hv_checkin_dates", JSON.stringify(next)); } catch { /* noop */ }
-    setCheckinDates(next);
+  const [checkin, setCheckin] = useState<CheckinStatus | null>(null);
+  const [checkinLoading, setCheckinLoading] = useState(false);
+  const [checkinErr, setCheckinErr] = useState<string | null>(null);
+  // 管理员：达标名单（按达成时间升序）
+  const [showLeader, setShowLeader] = useState(false);
+  const [leader, setLeader] = useState<CheckinLeaderEntry[] | null>(null);
+  const [leaderLoading, setLeaderLoading] = useState(false);
+
+  const loadCheckin = useCallback(async () => {
+    if (!isAuthed) return;
+    try {
+      const s = await fetchCheckinStatus();
+      setCheckin(s);
+      setCheckinErr(null);
+      // 一次性迁移：服务器还没有记录、但浏览器本地有历史签到 → 导入服务器后清除本地
+      let local: string[] = [];
+      try { local = JSON.parse(localStorage.getItem("hv_checkin_dates") || "[]"); } catch { local = []; }
+      if (Array.isArray(local) && local.length > 0 && !(s.dates && s.dates.length > 0)) {
+        try {
+          const migrated = await migrateCheckin(local);
+          setCheckin(migrated);
+          try { localStorage.removeItem("hv_checkin_dates"); } catch { /* noop */ }
+        } catch { /* 迁移失败不阻塞签到功能 */ }
+      }
+    } catch (e) {
+      setCheckinErr(getErrorMessage(e));
+    }
+  }, [isAuthed]);
+
+  useEffect(() => {
+    if (isAuthed) loadCheckin();
+  }, [isAuthed, loadCheckin]);
+
+  const alreadyToday = checkin?.alreadyToday ?? false;
+  const inWindow = checkin?.inWindow ?? false;
+  const consecutive = checkin?.consecutive ?? 0;
+
+  const handleCheckin = async () => {
+    if (!isAuthed || alreadyToday || !inWindow || checkinLoading) return;
+    setCheckinLoading(true);
+    setCheckinErr(null);
+    try {
+      const s = await checkinNow();
+      setCheckin(s);
+      try { localStorage.removeItem("hv_checkin_dates"); } catch { /* noop */ }
+    } catch (e) {
+      setCheckinErr(getErrorMessage(e));
+    } finally {
+      setCheckinLoading(false);
+    }
   };
-  const consecutive = (() => {
-    const set = new Set(checkinDates);
-    if (set.size === 0) return 0;
-    const d = new Date();
-    if (!set.has(todayStr)) d.setDate(d.getDate() - 1);
-    let c = 0;
-    const fmt = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
-    while (set.has(fmt(d))) { c++; d.setDate(d.getDate() - 1); }
-    return c;
-  })();
+
+  const toggleLeader = async () => {
+    const next = !showLeader;
+    setShowLeader(next);
+    if (next && leader === null) {
+      setLeaderLoading(true);
+      try { setLeader(await fetchCheckinLeaderboard()); } catch { setLeader([]); }
+      finally { setLeaderLoading(false); }
+    }
+  };
+
+  const fmtFirstAt = (ts: number) => {
+    const d = new Date(ts);
+    return `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  };
 
   return (
     <div className="hv-fade space-y-3 pt-2">
       {/* 签到领会员入口（顶部横幅） */}
       <button
-        onClick={() => setShowCheckin(true)}
+        onClick={() => { setShowCheckin(true); if (isAuthed) loadCheckin(); }}
         className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-500 px-4 py-3 text-base font-bold text-white shadow-lg shadow-fuchsia-500/25 transition active:scale-[0.98]"
       >
         <Gift className="h-5 w-5" />
@@ -332,14 +375,58 @@ export default function Starred() {
                 <div className="text-sm font-semibold text-foreground">已连续签到 {consecutive} 天</div>
                 <div className="text-[11px] text-muted-foreground">满 3 天即可领取</div>
               </div>
-              <button
-                onClick={doCheckin}
-                disabled={alreadyToday || !inWindow}
-                className={"rounded-xl px-4 py-2 text-sm font-medium text-white transition active:scale-95 " + (alreadyToday || !inWindow ? "bg-muted-foreground/40" : "bg-primary")}
-              >
-                {alreadyToday ? "今日已签到 ✓" : !inWindow ? "6:30-7:00 开放" : "今日签到"}
-              </button>
+              {!isAuthed ? (
+                <Link to="/login" className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white transition active:scale-95">登录后签到</Link>
+              ) : (
+                <button
+                  onClick={handleCheckin}
+                  disabled={alreadyToday || !inWindow || checkinLoading}
+                  className={"rounded-xl px-4 py-2 text-sm font-medium text-white transition active:scale-95 " + (alreadyToday || !inWindow ? "bg-muted-foreground/40" : "bg-primary")}
+                >
+                  {alreadyToday ? "今日已签到 ✓" : !inWindow ? "6:30-7:00 开放" : checkinLoading ? "签到中…" : "今日签到"}
+                </button>
+              )}
             </div>
+            {checkinErr && <p className="mt-2 text-center text-xs text-destructive">{checkinErr}</p>}
+
+            {isAdmin && (
+              <div className="mt-3 overflow-hidden rounded-2xl border g-border g-panel">
+                <button
+                  onClick={toggleLeader}
+                  className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/20"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Trophy className="h-4 w-4 text-amber-400" />
+                    达标名单（谁先签满 3 天）
+                  </span>
+                  <ChevronDown className={"h-4 w-4 text-muted-foreground transition-transform " + (showLeader ? "rotate-180" : "")} />
+                </button>
+                {showLeader && (
+                  <div className="border-t g-border px-3 py-2.5">
+                    {leaderLoading ? (
+                      <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> 加载中…
+                      </div>
+                    ) : !leader || leader.length === 0 ? (
+                      <p className="py-3 text-center text-xs text-muted-foreground/60">还没有人签满 3 天</p>
+                    ) : (
+                      <ol className="divide-y divide-muted/50">
+                        {leader.map((e, i) => (
+                          <li key={e.username} className="flex items-center gap-2.5 py-2">
+                            <span className={"flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold " + (i === 0 ? "bg-amber-400/20 text-amber-500" : "bg-muted/40 text-muted-foreground")}>
+                              {i + 1}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">{e.username}</span>
+                            <span className="text-[11px] text-muted-foreground/70">连续 {e.consecutive} 天</span>
+                            <span className="text-[11px] tabular-nums text-muted-foreground/60">{fmtFirstAt(e.firstAt)}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}    </div>

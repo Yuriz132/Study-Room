@@ -105,6 +105,10 @@ export interface User {
   progress: ProgressData
   /** 错题合集（云端持久化，每个用户独立） */
   wrongCollections?: WrongCollection[]
+  /** 服务器端签到日期记录（YYYY-MM-DD，活动期间逐日追加） */
+  checkinDates?: string[]
+  /** 最早连续签满 3 天的服务器时间戳(ms)，用于「谁先达标」排序判定 */
+  checkinFirstAt?: number
 }
 
 type AuthedRequest = Request & { user?: User }

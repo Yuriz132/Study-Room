@@ -16,6 +16,7 @@ import { friendsRouter } from './modules/friends'
 import { accountRouter } from './modules/account'
 import { dmRouter } from './modules/dm'
 import { wrongbookRouter } from './modules/wrongbook'
+import { checkinRouter } from './modules/checkin'
 // ============================================
 // Add your domain module imports here
 // ============================================
@@ -75,6 +76,9 @@ export const createApp = (): Application => {
 
   // 错题合集（拍照/文本收集 + 每个合集隔离的 AI 分析）
   app.use(`${env.API_PREFIX}/wrongbook`, wrongbookRouter)
+
+  // 签到领会员（服务端记账 + 达标时间戳排序）
+  app.use(`${env.API_PREFIX}/account/checkin`, checkinRouter)
 
   // ============================================
   // Add your domain module routes here
