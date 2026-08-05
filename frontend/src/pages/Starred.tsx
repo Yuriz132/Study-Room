@@ -16,7 +16,7 @@ import type { Note } from "@/lib/authApi";
 
 type Tab = "starred" | "known" | "wrong" | "notes" | "wrongbook";
 
-// 签到满 7 天可领取的会员权益清单
+// 签到满 3 天可领取的会员权益清单
 const CHECKIN_MEMBERS = [
   "腾讯视频VIP", "爱奇艺黄金VIP", "优酷视频VIP", "芒果TV会员",
   "咪咕视频钻石会员", "QQ音乐绿钻", "酷狗音乐会员", "网易云音乐VIP周卡",
@@ -43,7 +43,7 @@ export default function Starred() {
   const [preview, setPreview] = useState<string | null>(null);
   const [showAI, setShowAI] = useState(false);
 
-  // 签到领会员（本地记录连续签到天数，奖励需满 7 天后找管理员手动领取）
+  // 签到领会员（本地记录连续签到天数，奖励需满 3 天后找管理员手动领取）
   const [showCheckin, setShowCheckin] = useState(false);
   const [checkinDates, setCheckinDates] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem("hv_checkin_dates") || "[]"); } catch { return []; }
@@ -85,7 +85,7 @@ export default function Starred() {
       >
         <Gift className="h-5 w-5" />
         签到领会员
-        <span className="ml-1 rounded-full bg-white/25 px-2 py-0.5 text-[11px] font-semibold">连续 {consecutive}/7 天</span>
+        <span className="ml-1 rounded-full bg-white/25 px-2 py-0.5 text-[11px] font-semibold">连续 {consecutive}/3 天</span>
         <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-medium">每日 6:30-7:00</span>
       </button>
 
@@ -305,7 +305,7 @@ export default function Starred() {
             </div>
 
             <p className="mt-3 text-sm leading-relaxed text-foreground/85">
-              用户签到满 <span className="font-bold text-primary">7 天</span> 即可找我领取以下其中一份会员权益（<span className="font-bold text-rose-500">名额仅限 1 份，最早签满 7 天者优先领取</span>）：
+              用户签到满 <span className="font-bold text-primary">3 天</span> 即可找我领取以下其中一份会员权益（<span className="font-bold text-rose-500">名额仅限 1 份，最早签满 3 天者优先领取</span>）：
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -330,7 +330,7 @@ export default function Starred() {
             <div className="mt-4 flex items-center justify-between rounded-2xl bg-muted/30 px-4 py-3">
               <div>
                 <div className="text-sm font-semibold text-foreground">已连续签到 {consecutive} 天</div>
-                <div className="text-[11px] text-muted-foreground">满 7 天即可领取</div>
+                <div className="text-[11px] text-muted-foreground">满 3 天即可领取</div>
               </div>
               <button
                 onClick={doCheckin}
