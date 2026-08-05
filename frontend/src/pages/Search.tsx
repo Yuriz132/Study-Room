@@ -26,6 +26,24 @@ export default function SearchPage() {
   const [wakeUp, setWakeUp] = useState<NapType | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // 助眠音频循环设置：'once' 播放一次 | 'loop' 循环播放（默认：播放一次）
+  const [loopMode, setLoopMode] = useState<'once' | 'loop'>(() => {
+    try {
+      return localStorage.getItem('hv:napLoop') === 'loop' ? 'loop' : 'once';
+    } catch {
+      return 'once';
+    }
+  });
+  const setLoop = useCallback((m: 'once' | 'loop') => {
+    setLoopMode(m);
+    try {
+      localStorage.setItem('hv:napLoop', m);
+    } catch {
+      /* noop */
+    }
+    if (audioRef.current) audioRef.current.loop = m === 'loop';
+  }, []);
+
   /* 每秒刷新时钟 + 小睡倒计时 */
   useEffect(() => {
     let raf = 0;
@@ -82,15 +100,15 @@ export default function SearchPage() {
       if (napEnd) return;
       if (!audioRef.current) {
         audioRef.current = new Audio(AUDIO_PATH);
-        audioRef.current.loop = true;
       }
+      audioRef.current.loop = loopMode === 'loop';
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
       setNapType(type);
       setNapEnd(Date.now() + NAP_SECS * 1000);
       setWakeUp(null);
     },
-    [napEnd],
+    [napEnd, loopMode],
   );
 
   /* 提前结束 */
@@ -166,6 +184,26 @@ export default function SearchPage() {
 
         {/* 冥想睡眠播放器（白天/夜间均可使用） */}
         <div className="mt-3 border-t g-border pt-3">
+          {/* 循环设置 */}
+          <div className="mb-2.5 flex items-center justify-between rounded-xl border g-border g-panel px-3 py-2">
+            <span className="text-xs text-muted-foreground">播放模式</span>
+            <div className="flex rounded-lg g-border bg-muted/40 p-0.5">
+              {(['once', 'loop'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setLoop(m)}
+                  className={
+                    'rounded-md px-2.5 py-1 text-xs transition active:scale-95 ' +
+                    (loopMode === m
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:g-panel')
+                  }
+                >
+                  {m === 'once' ? '播放一次' : '循环播放'}
+                </button>
+              ))}
+            </div>
+          </div>
           <button
             onClick={() => startNap(isNight ? "evening" : "midday")}
             disabled={!!napEnd}
@@ -176,7 +214,9 @@ export default function SearchPage() {
               <div className="text-sm font-semibold">
                 {isNight ? "夜间助眠音频 · 26 分钟" : "冥想睡眠启动 · 26 分钟"}
               </div>
-              <div className="mt-0.5 text-[10px] text-muted-foreground/60">自动播放 → 暗光遮罩 → 到点唤醒</div>
+              <div className="mt-0.5 text-[10px] text-muted-foreground/60">
+                自动播放 → 暗光遮罩 → 到点唤醒 · 当前{loopMode === 'loop' ? '循环' : '播放一次'}
+              </div>
             </div>
           </button>
           <p className="mt-1.5 text-center text-[10px] text-muted-foreground/45">

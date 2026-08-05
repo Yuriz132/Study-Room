@@ -257,6 +257,29 @@ function ForumView({
   const [newCat, setNewCat] = useState<string>(category !== 'all' ? category : 'study')
   const [posting, setPosting] = useState(false)
 
+  // 已读帖子追踪（本机 localStorage，跨会话保存）：未读帖子显示编号红点，打开后消失
+  const [readIds, setReadIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('hv:readPosts')
+      return new Set(raw ? (JSON.parse(raw) as string[]) : [])
+    } catch {
+      return new Set<string>()
+    }
+  })
+  const markRead = useCallback((id: string) => {
+    setReadIds((prev) => {
+      if (prev.has(id)) return prev
+      const n = new Set(prev)
+      n.add(id)
+      try {
+        localStorage.setItem('hv:readPosts', JSON.stringify(Array.from(n)))
+      } catch {
+        /* noop */
+      }
+      return n
+    })
+  }, [])
+
   const [postImages, setPostImages] = useState<{ preview: string; url?: string; uploading: boolean }[]>([])
   const postFileRef = useRef<HTMLInputElement>(null)
 
@@ -428,9 +451,28 @@ function ForumView({
               )}
               {/* 列表布局：单列，保持原布局样式 */}
               <div className="flex flex-col gap-2.5">
-                {(isAuthed ? posts : posts.slice(0, 1)).map((p) => (
-                  <ForumPostRow key={p._id} post={p} onClick={() => { setDetailPost(p); window.history.pushState({ postDetail: true }, ''); }} />
-                ))}
+                {(() => {
+                  const displayed = isAuthed ? posts : posts.slice(0, 1)
+                  // 仅登录用户显示未读红点；按顺序给未读帖子编号 1、2、3、4……
+                  const unreadNum = new Map<string, number>()
+                  if (isAuthed) {
+                    let seq = 0
+                    for (const p of displayed) {
+                      if (p.author !== user && !readIds.has(p._id)) {
+                        seq += 1
+                        unreadNum.set(p._id, seq)
+                      }
+                    }
+                  }
+                  return displayed.map((p) => (
+                    <ForumPostRow
+                      key={p._id}
+                      post={p}
+                      unreadNumber={unreadNum.get(p._id)}
+                      onClick={() => { markRead(p._id); setDetailPost(p); window.history.pushState({ postDetail: true }, ''); }}
+                    />
+                  ))
+                })()}
               </div>
             </>
           )}
@@ -441,11 +483,16 @@ function ForumView({
 }
 
 /* ---- 帖子行（列表版，全宽卡片）---- */
-function ForumPostRow({ post, onClick }: { post: ForumPost; onClick: () => void }) {
+function ForumPostRow({ post, onClick, unreadNumber }: { post: ForumPost; onClick: () => void; unreadNumber?: number }) {
   const meta = CATEGORY_META[post.category]
   return (
     <button onClick={onClick}
-      className="flex w-full flex-col rounded-2xl border g-border g-panel p-3.5 text-left transition active:scale-[0.99] hover:g-panel">
+      className="relative flex w-full flex-col rounded-2xl border g-border g-panel p-3.5 text-left transition active:scale-[0.99] hover:g-panel">
+      {unreadNumber ? (
+        <span className="absolute right-2 top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white shadow-sm">
+          {unreadNumber}
+        </span>
+      ) : null}
       <div className="flex items-center gap-2">
         {meta && (
           <span className="inline-flex w-fit items-center gap-1 rounded-md bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-medium text-sky-500 dark:text-sky-400">
