@@ -81,6 +81,25 @@ export function useChat() {
       setJoined(false)
     })
 
+    // 管理员删除了某条消息 → 本地同步移除
+    socket.on('chat:deleted', (d: { id: string }) => {
+      const id = d?.id
+      if (!id) return
+      const t = expireRef.current.get(id)
+      if (t) {
+        clearTimeout(t)
+        expireRef.current.delete(id)
+      }
+      setMessages((prev) => prev.filter((m) => m.id !== id))
+    })
+
+    // 管理员清空全部记录 → 本地清空
+    socket.on('chat:cleared', () => {
+      expireRef.current.forEach((t) => clearTimeout(t))
+      expireRef.current.clear()
+      setMessages([])
+    })
+
     return () => {
       expireRef.current.forEach((t) => clearTimeout(t))
       expireRef.current.clear()
@@ -94,5 +113,15 @@ export function useChat() {
     socketRef.current?.emit('chat:message', { text: text.trim() })
   }, [])
 
-  return { messages, connected, joined, error, onlineCount, send }
+  // 删除单条消息（仅管理员生效，服务端会校验）
+  const deleteMessage = useCallback((id: string) => {
+    socketRef.current?.emit('chat:delete', { id })
+  }, [])
+
+  // 清空全部聊天记录（仅管理员生效，服务端会校验）
+  const clearMessages = useCallback(() => {
+    socketRef.current?.emit('chat:clear')
+  }, [])
+
+  return { messages, connected, joined, error, onlineCount, send, deleteMessage, clearMessages }
 }

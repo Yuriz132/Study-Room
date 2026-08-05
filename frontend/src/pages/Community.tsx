@@ -911,7 +911,8 @@ function CommentItem({ c, isAdmin, postAuthor, currentUser, isReply, onReply, on
    抖音风格实时聊天室
    =================================================================== */
 function ChatRoom({ onBack }: { onBack: () => void }) {
-  const { messages, connected, joined, error, onlineCount, send } = useChat()
+  const { messages, connected, joined, error, onlineCount, send, deleteMessage, clearMessages } = useChat()
+  const { isAdmin } = useAuth()
   const [text, setText] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -958,6 +959,17 @@ function ChatRoom({ onBack }: { onBack: () => void }) {
         </button>
         <div className="flex items-center gap-2.5">
           <span className="text-sm font-semibold text-foreground">💬 聊天室</span>
+          {isAdmin && (
+            <button
+              onClick={() => {
+                if (window.confirm('确定要清空全部聊天记录吗？此操作不可恢复。')) clearMessages()
+              }}
+              title="清空全部聊天记录（管理员）"
+              className="flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-1 text-[11px] font-medium text-destructive transition hover:bg-destructive/20"
+            >
+              <Trash2 className="h-3 w-3" /> 清空
+            </button>
+          )}
           <div className="flex items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1">
             <span className={cn('h-2 w-2 rounded-full', connected ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]' : 'bg-gray-400')} />
             <span className="text-[11px] tabular-nums text-muted-foreground">{onlineCount} 人在线</span>
@@ -1015,6 +1027,17 @@ function ChatRoom({ onBack }: { onBack: () => void }) {
                     {msg.username}
                   </span>
                   <span className="text-[10px] text-muted-foreground/45">{fmtTime(msg.timestamp)}</span>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`确定删除 ${msg.username} 的这条消息吗？`)) deleteMessage(msg.id)
+                      }}
+                      title="删除此消息（管理员）"
+                      className="ml-0.5 inline-flex items-center gap-0.5 rounded-md px-1 py-0.5 text-[10px] text-muted-foreground/50 opacity-0 transition group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
                 <div className="inline-block max-w-full rounded-2xl rounded-tl-sm bg-muted/30 dark:bg-muted/20 px-3 py-1.5">
                   <p className="text-[13px] leading-relaxed text-foreground/85 break-words whitespace-pre-wrap">{msg.text}</p>

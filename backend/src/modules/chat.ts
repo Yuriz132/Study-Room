@@ -20,7 +20,7 @@ interface ChatMessage {
 
 const MAX_HISTORY = 100
 const messages: ChatMessage[] = []
-const onlineUsers = new Map<string, { username: string; avatar: string | null }>()  // socket.id → user info
+const onlineUsers = new Map<string, { username: string; avatar: string | null; isAdmin: boolean }>()  // socket.id → user info
 
 function genId(): string {
   return Math.random().toString(36).slice(2, 10)
@@ -52,11 +52,12 @@ export function registerChat(io: Server): void {
 
       const username = joinUser.username
       const avatar = joinUser.avatar || null
+      const isAdmin = joinUser.role === 'admin'
 
       // 已在房间内则跳过
       if (onlineUsers.has(socket.id)) return
 
-      onlineUsers.set(socket.id, { username, avatar })
+      onlineUsers.set(socket.id, { username, avatar, isAdmin })
 
       // 发送历史消息
       socket.emit('chat:history', messages.slice(-50))
@@ -104,6 +105,42 @@ export function registerChat(io: Server): void {
       }
       addMessage(msg)
       io.emit('chat:message', msg)
+    })
+
+    // 管理员删除单条聊天记录（按 id 删除，广播让所有客户端同步移除）
+    socket.on('chat:delete', (data: { id?: string }) => {
+      const u = onlineUsers.get(socket.id)
+      if (!u || !u.isAdmin) {
+        socket.emit('chat:error', { message: '只有管理员可以删除聊天记录' })
+        return
+      }
+      const id = data?.id
+      if (!id) return
+      const idx = messages.findIndex((m) => m.id === id)
+      if (idx === -1) return
+      messages.splice(idx, 1)
+      io.emit('chat:deleted', { id })
+    })
+
+    // 管理员清空全部聊天记录
+    socket.on('chat:clear', () => {
+      const u = onlineUsers.get(socket.id)
+      if (!u || !u.isAdmin) {
+        socket.emit('chat:error', { message: '只有管理员可以清空聊天记录' })
+        return
+      }
+      messages.length = 0
+      const sysMsg: ChatMessage = {
+        id: genId(),
+        type: 'system',
+        username: u.username,
+        avatar: u.avatar,
+        text: '管理员已清空聊天记录，请大家文明发言 🧹',
+        timestamp: Date.now(),
+      }
+      addMessage(sysMsg)
+      io.emit('chat:cleared')
+      io.emit('chat:message', sysMsg)
     })
 
     socket.on('disconnect', () => {
