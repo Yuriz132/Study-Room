@@ -16,6 +16,7 @@ import CustomLibrary from "./pages/CustomLibrary";
 import CustomFlashcards from "./pages/CustomFlashcards";
 import Listen from "./pages/Listen";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
 import Account from "./pages/Account";
 import Dm from "./pages/Dm";
 import More from "./pages/More";
@@ -188,6 +189,7 @@ function App() {
                 <Route path="/public-notes" element={<PageTransition transition="stagger"><PublicNotes /></PageTransition>} />
                 <Route path="/pk" element={<PageTransition transition="stagger"><Battle /></PageTransition>} />
                 <Route path="/login" element={<PageTransition transition="stagger"><Login /></PageTransition>} />
+                <Route path="/forgot-password" element={<PageTransition transition="stagger"><ForgotPassword /></PageTransition>} />
                 <Route path="/account" element={<PageTransition transition="stagger"><Account /></PageTransition>} />
                 <Route path="/dm/:username" element={<PageTransition transition="stagger"><Dm /></PageTransition>} />
                 <Route path="/immersive" element={<PageTransition transition="stagger"><ImmersiveLearn /></PageTransition>} />

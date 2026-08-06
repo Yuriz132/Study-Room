@@ -118,3 +118,34 @@ export function ipGuardLogin(req: Request, res: Response, next: NextFunction): v
   b.login.push(now)
   next()
 }
+
+// ---------- 忘记密码 / 重置密码限流 ----------
+const FORGOT_WINDOW_MS = 10 * 60 * 1000
+const FORGOT_MAX = 8 // 10 分钟内同 IP 最多请求 8 次验证码
+const RESET_WINDOW_MS = 10 * 60 * 1000
+const RESET_MAX = 20 // 10 分钟内同 IP 最多重置 20 次
+
+function simpleIpLimiter(windowMs: number, max: number, msg: (retry: number) => string) {
+  const hits = new Map<string, number[]>()
+  return function (req: Request, res: Response, next: NextFunction): void {
+    const ip = clientIp(req)
+    const now = Date.now()
+    const cutoff = now - windowMs
+    const arr = (hits.get(ip) || []).filter((t) => t >= cutoff)
+    if (arr.length >= max) {
+      const retry = Math.max(1, Math.ceil((arr[0] + windowMs - now) / 1000))
+      res.set('Retry-After', String(retry))
+      res.status(429).json({ message: msg(retry) })
+      return
+    }
+    arr.push(now)
+    hits.set(ip, arr)
+    next()
+  }
+}
+
+/** 忘记密码（获取验证码）限流 */
+export const ipGuardForgot = simpleIpLimiter(FORGOT_WINDOW_MS, FORGOT_MAX, (retry) => `操作过于频繁，请 ${retry} 秒后再试`)
+
+/** 重置密码限流 */
+export const ipGuardReset = simpleIpLimiter(RESET_WINDOW_MS, RESET_MAX, (retry) => `操作过于频繁，请 ${retry} 秒后再试`)

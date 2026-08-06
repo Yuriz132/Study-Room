@@ -57,8 +57,29 @@ export async function apiLogin(username: string, password: string): Promise<Auth
   return data
 }
 
-export async function apiRegister(username: string, password: string, extra?: { hp?: string; geetest?: { lot_number: string; captcha_output: string; pass_token: string; gen_time: string } }): Promise<AuthResult> {
+export async function apiRegister(
+  username: string,
+  password: string,
+  extra?: {
+    hp?: string
+    email?: string
+    phone?: string
+    geetest?: { lot_number: string; captcha_output: string; pass_token: string; gen_time: string }
+  },
+): Promise<AuthResult> {
   const { data } = await apiClient.post<AuthResult>('/auth/register', { username, password, ...(extra ?? {}) })
+  return data
+}
+
+/** 忘记密码·第一步：输入注册时的邮箱/手机号，获取验证码（平台无短信/邮件服务，验证码直接返回） */
+export async function apiForgot(account: string): Promise<{ ok: boolean; exists?: boolean; code?: string; hint?: string }> {
+  const { data } = await apiClient.post<{ ok: boolean; exists?: boolean; code?: string; hint?: string }>('/auth/forgot', { account })
+  return data
+}
+
+/** 忘记密码·第二步：验证码 + 新密码完成重置，返回新 token 可自动登录 */
+export async function apiResetPassword(account: string, code: string, newPassword: string): Promise<{ ok: boolean; message?: string; username?: string; token?: string }> {
+  const { data } = await apiClient.post<{ ok: boolean; message?: string; username?: string; token?: string }>('/auth/reset', { account, code, newPassword })
   return data
 }
 

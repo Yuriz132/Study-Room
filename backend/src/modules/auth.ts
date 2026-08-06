@@ -4,7 +4,7 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { z } from 'zod'
 import { recordLearningActivity } from './leaderboard'
-import { ipGuardRegister, ipGuardLogin, recordRegistration } from './ipGuard'
+import { ipGuardRegister, ipGuardLogin, ipGuardForgot, ipGuardReset, recordRegistration } from './ipGuard'
 
 // ============================================
 // 账户 + 云端学习进度模块
@@ -109,6 +109,13 @@ export interface User {
   checkinDates?: string[]
   /** 最早连续签满 3 天的服务器时间戳(ms)，用于「谁先达标」排序判定 */
   checkinFirstAt?: number
+  /** 找回密码用邮箱（选填，注册时填写；统一小写存储，全局唯一） */
+  email?: string | null
+  /** 找回密码用手机号（选填，注册时填写；全局唯一） */
+  phone?: string | null
+  /** 找回密码验证码（服务端生成，10 分钟有效，重置成功后清除） */
+  resetCode?: string | null
+  resetCodeExpiresAt?: number | null
 }
 
 type AuthedRequest = Request & { user?: User }
@@ -247,6 +254,24 @@ const credentialsSchema = z.object({
   password: z.string().min(6, '密码至少 6 位').max(64, '密码过长'),
 })
 
+/** 注册 schema：在用户名/密码基础上，可选填邮箱或手机号（用于找回密码，不强制） */
+const registerSchema = credentialsSchema.extend({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email('邮箱格式不正确')
+    .max(100, '邮箱过长')
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^1[3-9]\d{9}$/, '手机号格式不正确（11 位大陆手机号）')
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+})
+
 const planSchema = z.object({
   id: z.string(),
   type: z.enum(['units', 'words', 'custom']),
@@ -349,13 +374,13 @@ async function verifyGeetest(params?: { lot_number?: string; captcha_output?: st
 
 export const authRouter: Router = Router()
 
-// 注册：仅记录账号密码
+// 注册：账号密码 + 选填邮箱/手机号（用于找回密码）
 authRouter.post('/auth/register', ipGuardRegister, async (req: Request, res: Response) => {
-  const parsed = credentialsSchema.safeParse(req.body)
+  const parsed = registerSchema.safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({ message: parsed.error.issues[0]?.message ?? '参数错误' })
   }
-  const { username, password } = parsed.data
+  const { username, password, email, phone } = parsed.data
 
   // 蜜罐：机器人常无差别填全字段；正常用户不会填此隐藏项
   const hp = (req.body as any)?.hp
@@ -372,6 +397,12 @@ authRouter.post('/auth/register', ipGuardRegister, async (req: Request, res: Res
   if (users.some((u) => u.username === username)) {
     return res.status(409).json({ message: '该用户名已被注册' })
   }
+  if (email && users.some((u) => u.email && u.email.toLowerCase() === email)) {
+    return res.status(409).json({ message: '该邮箱已被注册' })
+  }
+  if (phone && users.some((u) => u.phone === phone)) {
+    return res.status(409).json({ message: '该手机号已被注册' })
+  }
   const { salt, passwordHash } = hashPassword(password)
   const token = generateToken()
   const user: User = {
@@ -380,6 +411,8 @@ authRouter.post('/auth/register', ipGuardRegister, async (req: Request, res: Res
     passwordHash,
     token,
     progress: { ...EMPTY_PROGRESS },
+    ...(email ? { email } : {}),
+    ...(phone ? { phone } : {}),
   }
   users.push(user)
   await saveUsers(users)
@@ -403,6 +436,77 @@ authRouter.post('/auth/login', ipGuardLogin, async (req: Request, res: Response)
   user.token = generateToken()
   await saveUsers(users)
   return res.json(publicUser(user))
+})
+
+// ---------- 忘记密码（验证码两步重置）----------
+const RESET_CODE_TTL_MS = 10 * 60 * 1000 // 验证码 10 分钟有效
+
+function generateResetCode(): string {
+  return String(randomBytes(4).readUInt32BE(0) % 900000 + 100000) // 6 位数字
+}
+
+/** 按邮箱（小写）或手机号定位用户 */
+function findUserByContact(users: User[], account: string): User | undefined {
+  const acc = String(account || '').trim().toLowerCase()
+  if (!acc) return undefined
+  return users.find((u) => (u.email && u.email.toLowerCase() === acc) || u.phone === acc)
+}
+
+// 第一步：输入邮箱/手机号 → 生成验证码（平台无短信/邮件服务，验证码直接在响应中返回，页面展示）
+const forgotSchema = z.object({ account: z.string().trim().min(1, '请输入注册时的邮箱或手机号') })
+authRouter.post('/auth/forgot', ipGuardForgot, async (req: Request, res: Response) => {
+  const parsed = forgotSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ message: parsed.error.issues[0]?.message ?? '参数错误' })
+  }
+  const account = parsed.data.account
+  const users = await loadUsers()
+  const user = findUserByContact(users, account)
+  if (!user) {
+    // 未找到也返回 ok:true（前端据此提示「该邮箱/手机号未注册」），避免接口被用于枚举探测
+    return res.json({ ok: true, exists: false })
+  }
+  const code = generateResetCode()
+  user.resetCode = code
+  user.resetCodeExpiresAt = Date.now() + RESET_CODE_TTL_MS
+  await saveUsers(users)
+  return res.json({
+    ok: true,
+    exists: true,
+    code,
+    hint: '平台未接入短信/邮件服务，验证码已直接显示，请牢记后进入下一步',
+  })
+})
+
+// 第二步：验证码 + 新密码 → 重置并轮换 token（返回新 token，前端可自动登录）
+const resetSchema = z.object({
+  account: z.string().trim().min(1, '请输入注册时的邮箱或手机号'),
+  code: z.string().trim().length(6, '验证码为 6 位数字'),
+  newPassword: z.string().min(6, '新密码至少 6 位').max(64, '密码过长'),
+})
+authRouter.post('/auth/reset', ipGuardReset, async (req: Request, res: Response) => {
+  const parsed = resetSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ message: parsed.error.issues[0]?.message ?? '参数错误' })
+  }
+  const { account, code, newPassword } = parsed.data
+  const users = await loadUsers()
+  const user = findUserByContact(users, account)
+  if (!user) return res.status(404).json({ message: '账号不存在' })
+  if (!user.resetCode || !user.resetCodeExpiresAt || user.resetCodeExpiresAt < Date.now()) {
+    return res.status(400).json({ message: '验证码已过期，请重新获取' })
+  }
+  if (user.resetCode !== code) {
+    return res.status(400).json({ message: '验证码错误' })
+  }
+  const { salt, passwordHash } = hashPassword(newPassword)
+  user.salt = salt
+  user.passwordHash = passwordHash
+  user.token = generateToken() // 重置后轮换 token，旧会话全部失效
+  user.resetCode = null
+  user.resetCodeExpiresAt = null
+  await saveUsers(users)
+  return res.json({ ok: true, message: '密码重置成功', username: user.username, token: user.token })
 })
 
 // 获取当前登录用户信息（用户名+角色+头像状态）

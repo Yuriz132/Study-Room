@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, type FormEvent } from "react";
-import { User, Lock, Smartphone } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { User, Lock, Smartphone, Mail } from "lucide-react";
 import { ExplodeIn, FlyIn } from "@/components/MotionPrimitives";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -17,9 +18,12 @@ import {
 
 export default function Login() {
   const { login, register, loginLocal } = useAuth();
+  const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const geetestResult = useRef<{ lot_number: string; captcha_output: string; pass_token: string; gen_time: string } | null>(null);
@@ -101,7 +105,7 @@ export default function Login() {
       else {
         const hpVal = ((e.target as HTMLFormElement).elements.namedItem('hp') as HTMLInputElement)?.value || '';
         if (geetestCaptchaId && !geetestResult.current) { setError('请先完成人机验证'); setBusy(false); return; }
-        await register(name, password, { hp: hpVal, geetest: geetestResult.current ?? undefined });
+        await register(name, password, { hp: hpVal, email: email.trim() || undefined, phone: phone.trim() || undefined, geetest: geetestResult.current ?? undefined });
       }
     } catch (err: unknown) {
       const msg =
@@ -165,6 +169,34 @@ export default function Login() {
               />
             </label>
 
+            {/* 注册选填：邮箱 / 手机号（用于找回密码） */}
+            {mode === "register" && (
+              <>
+                <label className="flex items-center gap-2 rounded-lg g-panel px-4 py-3 ring-1 g-ring focus-within:ring-primary">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="邮箱（选填，用于找回密码）"
+                    autoComplete="email"
+                    className="w-full border-0 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                  />
+                </label>
+                <label className="flex items-center gap-2 rounded-lg g-panel px-4 py-3 ring-1 g-ring focus-within:ring-primary">
+                  <Smartphone className="h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="手机号（选填，用于找回密码）"
+                    autoComplete="tel"
+                    className="w-full border-0 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                  />
+                </label>
+              </>
+            )}
+
             {/* Honeypot — hidden from real users, filled by bots */}
             <input
               name="hp"
@@ -213,6 +245,18 @@ export default function Login() {
             >
               {busy ? "处理中…" : mode === "login" ? "登录" : "注册并登录"}
             </button>
+
+            {mode === "login" && (
+              <div className="pt-1 text-center">
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-primary"
+                >
+                  忘记密码？
+                </button>
+              </div>
+            )}
           </form>
 
           <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground/60">
@@ -267,7 +311,7 @@ export default function Login() {
             <p className="mb-1.5"><span className="font-medium text-foreground">二、内容规范：</span>用户评论、上传图片仅限学习交流；禁止发布盗版资源、不良图文、广告引流内容；禁止向外分享链接。</p>
             <p className="mb-1.5"><span className="font-medium text-foreground">三、法律责任：</span>违规内容一经发现将立即删除，发布者账号将被限制访问。</p>
             <p className="mb-1.5"><span className="font-medium text-foreground">四、知识产权：</span>本站收录的词汇、音频等学习资源仅供内部教学使用。</p>
-            <p className="mb-1.5"><span className="font-medium text-foreground">五、隐私保护：</span>本站仅收集用户名与加密密码用于账号登录；学习记录存储于服务器以便跨设备同步；不会向任何第三方提供您的个人数据。</p>
+            <p className="mb-1.5"><span className="font-medium text-foreground">五、隐私保护：</span>本站仅收集用户名与加密密码用于账号登录；可选填的邮箱/手机号仅用于找回密码，不会向任何第三方提供；学习记录存储于服务器以便跨设备同步。</p>
             <p><span className="font-medium text-foreground">六、生效条款：</span>访问或注册本站即视为您已阅读、理解并同意以上全部约定。</p>
           </div>
           <AlertDialogFooter className="gap-2 sm:gap-2">
