@@ -67,6 +67,7 @@ export interface GroupDetail {
   myStatus: MemberStatus
   myRole: MemberRole | null
   canManage: boolean
+  canDisband: boolean
   canChat: boolean
   taskListNumberToday: number
   todayInfo: { date: string; isCheckinDay: boolean; inWindow: boolean; checkedIn: boolean }
@@ -110,6 +111,11 @@ export async function apiJoinGroup(id: string, note?: string): Promise<{ status:
 
 export async function apiLeaveGroup(id: string): Promise<{ status: string }> {
   const { data } = await apiClient.post(`/groups/${encodeURIComponent(id)}/leave`)
+  return data
+}
+
+export async function apiDisbandGroup(id: string): Promise<{ status: string }> {
+  const { data } = await apiClient.post(`/groups/${encodeURIComponent(id)}/disband`)
   return data
 }
 

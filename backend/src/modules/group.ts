@@ -3,7 +3,7 @@ import { Server, Socket } from 'socket.io'
 import { z } from 'zod'
 import path from 'path'
 import { promises as fs } from 'fs'
-import { authMiddleware, adminMiddleware, loadUsers, type User } from './auth'
+import { authMiddleware, loadUsers, type User } from './auth'
 
 // ============================================
 // 群聊模块
@@ -214,6 +214,14 @@ function canManage(g: Group, user?: User): boolean {
 function isApprovedMember(g: Group, username: string): boolean {
   const m = findMember(g, username)
   return !!m && m.status === 'approved' && !m.banned
+}
+
+/** 是否拥有解散群聊的权限：站点管理员 / 群主（被任命管理员不可解散） */
+function canDisband(g: Group, user?: User): boolean {
+  if (!user) return false
+  if (user.role === 'admin') return true
+  if (g.owner && g.owner === user.username) return true
+  return false
 }
 
 // ---------- 考勤结算（迟到=缺勤；超阈值拉黑）----------
@@ -458,6 +466,7 @@ function detailView(g: Group, me: string, user?: User): Record<string, unknown> 
     myStatus,
     myRole: member?.role ?? null,
     canManage: manage,
+    canDisband: canDisband(g, user),
     canChat: approved,
     taskListNumberToday: computeListNumber(g, today),
     todayInfo: {
@@ -566,7 +575,7 @@ groupRouter.post('/:id/join', async (req: Request, res: Response) => {
 
 // 管理员：审核通过
 const targetSchema = z.object({ username: z.string().trim().min(1, '用户名不能为空') })
-groupRouter.post('/:id/approve', adminMiddleware, async (req: Request, res: Response) => {
+groupRouter.post('/:id/approve', async (req: Request, res: Response) => {
   const parsed = targetSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ message: '参数错误' })
   const groups = await loadGroups()
@@ -589,7 +598,7 @@ groupRouter.post('/:id/approve', adminMiddleware, async (req: Request, res: Resp
 })
 
 // 管理员：拒绝/移除待审核
-groupRouter.post('/:id/reject', adminMiddleware, async (req: Request, res: Response) => {
+groupRouter.post('/:id/reject', async (req: Request, res: Response) => {
   const parsed = targetSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ message: '参数错误' })
   const groups = await loadGroups()
@@ -617,7 +626,7 @@ groupRouter.post('/:id/leave', async (req: Request, res: Response) => {
 
 // 管理员：设置群公告
 const announceSchema = z.object({ text: z.string().trim().min(1, '公告不能为空').max(500, '公告最多 500 字') })
-groupRouter.post('/:id/announce', adminMiddleware, async (req: Request, res: Response) => {
+groupRouter.post('/:id/announce', async (req: Request, res: Response) => {
   const parsed = announceSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ message: parsed.error.issues[0]?.message ?? '参数错误' })
   const groups = await loadGroups()
@@ -654,7 +663,7 @@ groupRouter.post('/:id/checkin', async (req: Request, res: Response) => {
 })
 
 // 管理员：查看考勤（全量近期 + 缺勤统计 + 待申诉）
-groupRouter.get('/:id/attendance', adminMiddleware, async (req: Request, res: Response) => {
+groupRouter.get('/:id/attendance', async (req: Request, res: Response) => {
   const groups = await loadGroups()
   const g = getGroup(groups, String(req.params.id))
   if (!g) return res.status(404).json({ message: '群聊不存在' })
@@ -682,7 +691,7 @@ const ruleSchema = z.object({
   endMin: z.number().int().min(0).max(1439).optional(),
   absentThreshold: z.number().int().min(1).max(30).optional(),
 })
-groupRouter.post('/:id/checkin-rule', adminMiddleware, async (req: Request, res: Response) => {
+groupRouter.post('/:id/checkin-rule', async (req: Request, res: Response) => {
   const parsed = ruleSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ message: '参数错误' })
   const groups = await loadGroups()
@@ -701,7 +710,7 @@ groupRouter.post('/:id/checkin-rule', adminMiddleware, async (req: Request, res:
 
 // 管理员：发布今日早读任务（List 6 起按日历日递增，幂等）
 const taskSchema = z.object({ text: z.string().trim().max(300, '说明最多 300 字').optional() })
-groupRouter.post('/:id/task', adminMiddleware, async (req: Request, res: Response) => {
+groupRouter.post('/:id/task', async (req: Request, res: Response) => {
   const parsed = taskSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ message: parsed.error.issues[0]?.message ?? '参数错误' })
   const groups = await loadGroups()
@@ -739,7 +748,7 @@ groupRouter.post('/:id/appeal', async (req: Request, res: Response) => {
 })
 
 // 管理员：撤销拉黑（恢复成员资格，缺勤计数清零）
-groupRouter.post('/:id/unban', adminMiddleware, async (req: Request, res: Response) => {
+groupRouter.post('/:id/unban', async (req: Request, res: Response) => {
   const parsed = targetSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ message: '参数错误' })
   const groups = await loadGroups()
@@ -766,7 +775,7 @@ groupRouter.post('/:id/unban', adminMiddleware, async (req: Request, res: Respon
 })
 
 // 管理员：移除成员（不可移除群主）
-groupRouter.post('/:id/remove', adminMiddleware, async (req: Request, res: Response) => {
+groupRouter.post('/:id/remove', async (req: Request, res: Response) => {
   const parsed = targetSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ message: '参数错误' })
   const me = (req as AuthedReq).user!.username
@@ -791,7 +800,7 @@ groupRouter.post('/:id/remove', adminMiddleware, async (req: Request, res: Respo
 
 // 管理员：设置成员角色（owner 不可改；可任命/取消 admin）
 const roleSchema = z.object({ username: z.string().trim().min(1), role: z.enum(['admin', 'member']) })
-groupRouter.post('/:id/role', adminMiddleware, async (req: Request, res: Response) => {
+groupRouter.post('/:id/role', async (req: Request, res: Response) => {
   const parsed = roleSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ message: '参数错误' })
   const groups = await loadGroups()
@@ -804,4 +813,24 @@ groupRouter.post('/:id/role', adminMiddleware, async (req: Request, res: Respons
   m.role = parsed.data.role
   await saveGroups(groups)
   return res.json({ username: m.username, role: m.role })
+})
+
+// 群主 / 站点管理员：解散群聊（群聊彻底删除，所有成员移出）
+groupRouter.post('/:id/disband', async (req: Request, res: Response) => {
+  const me = (req as AuthedReq).user!
+  const groups = await loadGroups()
+  const g = getGroup(groups, String(req.params.id))
+  if (!g) return res.status(404).json({ message: '群聊不存在' })
+  if (!canDisband(g, me)) return res.status(403).json({ message: '只有群主或管理员可以解散群聊' })
+  if (groupIo) {
+    groupIo.to('group:' + g.id).emit('group:message', {
+      id: genId('m_'), type: 'system', username: '系统', avatar: null,
+      text: '该群聊已解散', timestamp: Date.now(), sysKind: 'disband',
+    } as GroupMessage)
+    groupIo.to('group:' + g.id).emit('group:disbanded', { id: g.id })
+  }
+  const idx = groups.findIndex((x) => x.id === g.id)
+  if (idx >= 0) groups.splice(idx, 1)
+  await saveGroups(groups)
+  return res.json({ status: 'disbanded' })
 })

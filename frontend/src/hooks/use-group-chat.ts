@@ -23,6 +23,7 @@ export function useGroupChat(groupId: string | undefined) {
   const [announcement, setAnnouncement] = useState<GroupAnnouncement | null>(null)
   const [latestTask, setLatestTask] = useState<GroupTask | null>(null)
   const [checkinEvents, setCheckinEvents] = useState<{ username: string; date: string }[]>([])
+  const [disbanded, setDisbanded] = useState(false)
 
   useEffect(() => {
     if (!groupId) return
@@ -85,6 +86,10 @@ export function useGroupChat(groupId: string | undefined) {
       setMessages((prev) => prev.filter((m) => m.id !== id))
     })
 
+    socket.on('group:disbanded', () => {
+      setDisbanded(true)
+    })
+
     return () => {
       socket.emit('group:leave', { groupId })
       socket.disconnect()
@@ -108,5 +113,5 @@ export function useGroupChat(groupId: string | undefined) {
     [groupId]
   )
 
-  return { messages, connected, joined, error, announcement, latestTask, checkinEvents, send, deleteMessage }
+  return { messages, connected, joined, error, announcement, latestTask, checkinEvents, disbanded, send, deleteMessage }
 }

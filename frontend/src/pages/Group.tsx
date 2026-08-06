@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useGroupChat } from '@/hooks/use-group-chat'
 import { cn } from '@/lib/utils'
 import {
-  apiGetGroup, apiJoinGroup, apiApproveMember, apiRejectMember, apiSetAnnouncement, apiLeaveGroup,
+  apiGetGroup, apiJoinGroup, apiApproveMember, apiRejectMember, apiSetAnnouncement, apiLeaveGroup, apiDisbandGroup,
   apiCheckin, apiGetAttendance, apiSetCheckinRule, apiPublishTask, apiAppeal, apiUnban,
   apiRemoveMember, apiSetRole, getErrorMessage,
   type GroupDetail, type GroupMemberView, type AttendanceView, type CheckinRule,
@@ -58,7 +58,12 @@ export default function GroupPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user, isAuthed } = useAuth()
-  const { messages, joined, error, announcement, send, deleteMessage } = useGroupChat(id)
+  const { messages, joined, error, announcement, send, deleteMessage, disbanded } = useGroupChat(id)
+
+  // 群被解散（自己或其他成员触发）-> 返回好友页
+  useEffect(() => {
+    if (disbanded) navigate('/friends')
+  }, [disbanded, navigate])
 
   const [detail, setDetail] = useState<GroupDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -130,6 +135,13 @@ export default function GroupPage() {
     act(async () => { await apiLeaveGroup(detail.id) }, 'leave', async () => { navigate('/friends') })
   }
 
+  // 解散群聊（群主/管理员；解散后群不复存在，返回好友页）
+  const disbandGroup = () => {
+    if (!detail) return
+    if (!window.confirm('确定解散该群聊吗？解散后群聊将永久删除，所有成员都会被移出。')) return
+    act(async () => { await apiDisbandGroup(detail.id) }, 'disband', async () => { navigate('/friends') })
+  }
+
   const isManager = detail?.canManage || false
 
   const showManagePanel = useMemo(() => isManager && showManage, [isManager, showManage])
@@ -172,7 +184,8 @@ export default function GroupPage() {
   if (!detail) return null
 
   // ===== 非成员：入群申请 =====
-  if (joinState !== 'done') {
+  // 管理员（含站点管理员管理公开群）即使自身未入群/待审核，也应能看到成员视图与管理面板
+  if (joinState !== 'done' && !isManager) {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 pb-20 pt-6">
         <header className="mb-3 flex items-center gap-2">
@@ -259,11 +272,11 @@ export default function GroupPage() {
           <p className="text-xs text-muted-foreground">{detail.memberCount} 名成员{detail.isPublic ? ' · 公开群' : ''}</p>
         </div>
         {isManager && (
-          <button onClick={() => setShowManage((v) => !v)} className="rounded-full g-border g-panel p-2" title="管理">
+          <button onClick={() => { setTab('manage'); setShowManage(true) }} className="rounded-full g-border g-panel p-2" title="管理">
             <Settings className="h-5 w-5" />
           </button>
         )}
-        {detail.myRole !== 'owner' && (
+        {detail.myStatus === 'approved' && detail.myRole !== 'owner' && (
           <button onClick={leaveGroup} disabled={busy === 'leave'} className="rounded-full g-border g-panel p-2 text-muted-foreground disabled:opacity-60" title="退出群聊">
             <LogOut className="h-5 w-5" />
           </button>
@@ -452,7 +465,8 @@ export default function GroupPage() {
           act={act}
           reload={load}
           reloadAttend={loadAttend}
-          onClose={() => setShowManage(false)}
+          onClose={() => { setShowManage(false); setTab('chat') }}
+          onDisband={disbandGroup}
         />
       )}
     </div>
@@ -463,7 +477,7 @@ export default function GroupPage() {
 // 管理面板（仅群管理员可见）
 // ============================================================
 function GroupManage({
-  detail, attend, rule, setRule, annText, setAnnText, busy, act, reload, reloadAttend, onClose,
+  detail, attend, rule, setRule, annText, setAnnText, busy, act, reload, reloadAttend, onClose, onDisband,
 }: {
   detail: GroupDetail
   attend: AttendanceView | null
@@ -476,6 +490,7 @@ function GroupManage({
   reload: () => Promise<void>
   reloadAttend: () => Promise<void>
   onClose: () => void
+  onDisband: () => void
 }) {
   const id = detail.id
   const weekToggles = (val: number[]) =>
@@ -611,6 +626,17 @@ function GroupManage({
         </div>
         <button onClick={onClose} className="mt-3 w-full rounded-xl g-border g-panel py-2 text-sm text-muted-foreground">收起管理面板</button>
       </section>
+
+      {/* 解散群聊（仅群主/管理员） */}
+      {detail.canDisband && (
+        <section className="liquid-glass rounded-2xl border border-rose-300/50 p-4">
+          <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-rose-600"><AlertTriangle className="h-4 w-4" />危险操作</h3>
+          <p className="mb-2 text-xs text-muted-foreground">解散后群聊将永久删除，所有成员被移出且无法恢复。</p>
+          <button disabled={busy === 'disband'} onClick={onDisband} className="w-full rounded-xl bg-rose-500 py-2 text-sm font-medium text-white disabled:opacity-60">
+            解散群聊
+          </button>
+        </section>
+      )}
     </div>
   )
 }
