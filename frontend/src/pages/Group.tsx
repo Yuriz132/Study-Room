@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Users, Megaphone, CalendarCheck, BookOpen, Crown, Shield, UserMinus,
-  UserPlus, Send, Trash2, AlertTriangle, Settings, GraduationCap,
+  UserPlus, Send, Trash2, AlertTriangle, Settings, GraduationCap, LogOut,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useGroupChat } from '@/hooks/use-group-chat'
 import { cn } from '@/lib/utils'
 import {
-  apiGetGroup, apiJoinGroup, apiApproveMember, apiRejectMember, apiSetAnnouncement,
+  apiGetGroup, apiJoinGroup, apiApproveMember, apiRejectMember, apiSetAnnouncement, apiLeaveGroup,
   apiCheckin, apiGetAttendance, apiSetCheckinRule, apiPublishTask, apiAppeal, apiUnban,
   apiRemoveMember, apiSetRole, getErrorMessage,
   type GroupDetail, type GroupMemberView, type AttendanceView, type CheckinRule,
@@ -121,6 +121,13 @@ export default function GroupPage() {
       setErr(getErrorMessage(e))
     }
     setBusy('')
+  }
+
+  // 退出群聊（群主不可退出；退出后返回好友页并刷新列表）
+  const leaveGroup = () => {
+    if (!detail) return
+    if (!window.confirm('确定退出该群聊吗？退出后需重新申请加入。')) return
+    act(async () => { await apiLeaveGroup(detail.id) }, 'leave', async () => { navigate('/friends') })
   }
 
   const isManager = detail?.canManage || false
@@ -254,6 +261,11 @@ export default function GroupPage() {
         {isManager && (
           <button onClick={() => setShowManage((v) => !v)} className="rounded-full g-border g-panel p-2" title="管理">
             <Settings className="h-5 w-5" />
+          </button>
+        )}
+        {detail.myRole !== 'owner' && (
+          <button onClick={leaveGroup} disabled={busy === 'leave'} className="rounded-full g-border g-panel p-2 text-muted-foreground disabled:opacity-60" title="退出群聊">
+            <LogOut className="h-5 w-5" />
           </button>
         )}
       </header>
