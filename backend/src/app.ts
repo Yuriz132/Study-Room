@@ -17,6 +17,7 @@ import { accountRouter } from './modules/account'
 import { dmRouter } from './modules/dm'
 import { wrongbookRouter } from './modules/wrongbook'
 import { checkinRouter } from './modules/checkin'
+import { groupRouter } from './modules/group'
 // ============================================
 // Add your domain module imports here
 // ============================================
@@ -79,6 +80,9 @@ export const createApp = (): Application => {
 
   // 签到领会员（服务端记账 + 达标时间戳排序）
   app.use(`${env.API_PREFIX}/account/checkin`, checkinRouter)
+
+  // 群聊（创建/公开群/考勤/早读/管理）
+  app.use(`${env.API_PREFIX}/groups`, groupRouter)
 
   // ============================================
   // Add your domain module routes here

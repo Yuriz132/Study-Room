@@ -22,6 +22,7 @@ import More from "./pages/More";
 import Community from "./pages/Community";
 import Friends from "./pages/Friends";
 import User from "./pages/User";
+import Group from "./pages/Group";
 import StudyRoom from "./pages/StudyRoom";
 import Battle from "./pages/Battle";
 import PublicNotes from "./pages/PublicNotes";
@@ -181,6 +182,7 @@ function App() {
                 <Route path="/more" element={<PageTransition transition="stagger"><More /></PageTransition>} />
                 <Route path="/community" element={<PageTransition transition="stagger"><Community /></PageTransition>} />
                 <Route path="/friends" element={<PageTransition transition="stagger"><Friends /></PageTransition>} />
+                <Route path="/group/:id" element={<PageTransition transition="stagger"><Group /></PageTransition>} />
                 <Route path="/user/:username" element={<PageTransition transition="stagger"><User /></PageTransition>} />
                 <Route path="/study/:friend" element={<PageTransition transition="stagger"><StudyRoom /></PageTransition>} />
                 <Route path="/public-notes" element={<PageTransition transition="stagger"><PublicNotes /></PageTransition>} />

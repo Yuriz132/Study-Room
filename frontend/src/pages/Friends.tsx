@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserPlus, Check, X, Swords, BookOpen, Search, Loader2, UserMinus, Users } from 'lucide-react'
+import { UserPlus, Check, X, Swords, BookOpen, Search, Loader2, UserMinus, Users, Megaphone } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useFriendIndicators } from '@/context/FriendIndicatorContext'
 import { usePresence } from '@/context/PresenceContext'
@@ -10,6 +10,9 @@ import {
   apiGetUser, apiSendDmInvite, type FriendRelations, type PublicUser,
 } from '@/lib/authApi'
 import { getErrorMessage } from '@/lib/api-client'
+import {
+  apiListGroups, apiCreateGroup, type GroupSummary, type MyGroupView,
+} from '@/lib/group'
 
 function LetterAvatar({ name, size = 40, onClick }: { name: string; size?: number; onClick?: () => void }) {
   return (
@@ -38,6 +41,17 @@ export default function FriendsPage() {
   const [busy, setBusy] = useState('')
   const [err, setErr] = useState('')
 
+  // 群聊：公开群 / 我的群聊
+  const [publicGroups, setPublicGroups] = useState<GroupSummary[]>([])
+  const [myGroups, setMyGroups] = useState<MyGroupView[]>([])
+  const [groupBusy, setGroupBusy] = useState('')
+
+  // 创建群聊
+  const [showCreate, setShowCreate] = useState(false)
+  const [createName, setCreateName] = useState('')
+  const [createDesc, setCreateDesc] = useState('')
+  const [createPublic, setCreatePublic] = useState(false)
+
   // 搜索添加
   const [q, setQ] = useState('')
   const [found, setFound] = useState<PublicUser | null>(null)
@@ -49,9 +63,27 @@ export default function FriendsPage() {
     try {
       const r = await apiGetFriends()
       setRel(r)
+      const g = await apiListGroups()
+      setPublicGroups(g.publicGroups)
+      setMyGroups(g.myGroups)
     } catch (e) { setErr(getErrorMessage(e)) }
     setLoading(false)
   }, [])
+
+  const createGroup = async () => {
+    const name = createName.trim()
+    if (name.length < 2) { setErr('群名至少 2 个字'); return }
+    setGroupBusy('create')
+    try {
+      const g = await apiCreateGroup({ name, description: createDesc.trim() || undefined, isPublic: createPublic })
+      setShowCreate(false)
+      setCreateName('')
+      setCreateDesc('')
+      setCreatePublic(false)
+      navigate('/group/' + encodeURIComponent(g.id))
+    } catch (e) { setErr(getErrorMessage(e)) }
+    setGroupBusy('')
+  }
 
   useEffect(() => { if (isAuthed) load(); else setLoading(false) }, [isAuthed, load])
 
@@ -124,8 +156,7 @@ export default function FriendsPage() {
           return (
             <div className="mt-3 flex items-center gap-3 rounded-xl g-border g-panel p-3">
               <LetterAvatar name={found.username} onClick={() => navigate('/user/' + encodeURIComponent(found.username))} />
-              <span className="flex-1 truncate text-sm font-medium text-foreground">{found.username}</span>
-              {isFriend ? (
+              <span className="flex-1 truncate text-sm font-medium text-foreground">{found.username}</span>              {isFriend ? (
                 <span className="text-xs text-muted-foreground">已是好友</span>
               ) : isOutgoing ? (
                 <span className="text-xs text-muted-foreground">等待确认…</span>
@@ -141,6 +172,53 @@ export default function FriendsPage() {
             </div>
           )
         })()}
+      </div>
+
+      {/* 公开群聊（含固定群「火箭班」）*/}
+      <SectionTitle>公开群聊</SectionTitle>
+      {publicGroups.length === 0 ? (
+        <p className="px-1 text-xs text-muted-foreground/60">暂无公开群聊</p>
+      ) : (
+        <div className="space-y-2">
+          {publicGroups.map((g) => (
+            <button key={g.id} onClick={() => navigate('/group/' + encodeURIComponent(g.id))} className="flex w-full items-center gap-3 rounded-2xl g-border g-panel p-3 text-left">
+              <span className="relative inline-flex shrink-0">
+                <LetterAvatar name={g.name} size={36} />
+                {g.id === 'rocket' && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-rose-500 ring-2 ring-card" />}
+              </span>
+              <span className="flex-1 truncate">
+                <span className="block text-sm font-medium text-foreground">{g.name}</span>
+                <span className="block text-xs text-muted-foreground">{g.memberCount} 名成员{g.pendingCount > 0 ? ` · ${g.pendingCount} 待审核` : ''}</span>
+              </span>
+              <Megaphone className="h-4 w-4 text-muted-foreground/60" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* 我的群聊 */}
+      <SectionTitle>我的群聊</SectionTitle>
+      <div className="space-y-2">
+        <button onClick={() => setShowCreate(true)} className="flex w-full items-center gap-3 rounded-2xl g-border g-panel p-3 text-left">
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary"><UserPlus className="h-4 w-4" /></span>
+          <span className="flex-1 text-sm font-medium text-foreground">创建群聊</span>
+        </button>
+        {myGroups.length === 0 ? (
+          <p className="px-1 text-xs text-muted-foreground/60">还没有加入任何群聊</p>
+        ) : (
+          myGroups.map((g) => (
+            <button key={g.id} onClick={() => navigate('/group/' + encodeURIComponent(g.id))} className="flex w-full items-center gap-3 rounded-2xl g-border g-panel p-3 text-left">
+              <LetterAvatar name={g.name} size={36} />
+              <span className="flex-1 truncate">
+                <span className="block text-sm font-medium text-foreground">{g.name}</span>
+                <span className="block text-xs text-muted-foreground">{g.memberCount} 名成员 · 今日早读 List {g.taskListNumberToday}</span>
+              </span>
+              {g.unread > 0 && (
+                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">{g.unread > 99 ? '99+' : g.unread}</span>
+              )}
+            </button>
+          ))
+        )}
       </div>
 
       {err && <p className="mt-2 px-1 text-xs text-destructive">{err}</p>}
@@ -221,6 +299,38 @@ export default function FriendsPage() {
             <div className="mt-4 flex gap-2">
               <button onClick={() => setConfirming('')} className="flex-1 rounded-xl g-border g-panel py-2.5 text-sm text-muted-foreground">取消</button>
               <button onClick={() => { const n = confirming; setConfirming(''); act(() => apiFriendRemove(n), 'del:' + n) }} className="flex-1 rounded-xl bg-destructive py-2.5 text-sm font-medium text-white">确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 创建群聊 */}
+      {showCreate && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setShowCreate(false)}>
+          <div className="w-full max-w-sm rounded-3xl bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-foreground">创建群聊</h3>
+            <div className="mt-3 space-y-2">
+              <input
+                value={createName}
+                onChange={(e) => setCreateName(e.target.value)}
+                placeholder="群名称（2-20 字）"
+                className="w-full rounded-xl g-border bg-transparent px-3 py-2.5 text-sm outline-none"
+              />
+              <textarea
+                value={createDesc}
+                onChange={(e) => setCreateDesc(e.target.value)}
+                placeholder="群简介（选填）"
+                rows={2}
+                className="w-full rounded-xl g-border bg-transparent px-3 py-2 text-sm outline-none"
+              />
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <input type="checkbox" checked={createPublic} onChange={(e) => setCreatePublic(e.target.checked)} className="h-4 w-4" />
+                设为公开群（出现在「公开群聊」列表，他人可申请加入）
+              </label>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button onClick={() => setShowCreate(false)} className="flex-1 rounded-xl g-border g-panel py-2.5 text-sm text-muted-foreground">取消</button>
+              <button onClick={createGroup} disabled={groupBusy === 'create'} className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60">创建</button>
             </div>
           </div>
         </div>
