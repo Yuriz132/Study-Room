@@ -119,6 +119,9 @@ importers:
       framer-motion:
         specifier: ^12.26.1
         version: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      fsrs.js:
+        specifier: ^1.2.2
+        version: 1.2.2
       gsap:
         specifier: ^3.13.0
         version: 3.15.0
@@ -2060,6 +2063,10 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  fsrs.js@1.2.2:
+    resolution: {integrity: sha512-LFFPn33/EBbqJoOKmtCfE+Y3LyijQO7ytf/3N6+BlPP/QxI6nlrX6n7IeeKVkjxXVrKxUUvFXTR5K6keSztphg==}
+    engines: {node: '>=10'}
 
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
@@ -4658,6 +4665,8 @@ snapshots:
 
   fsevents@2.3.3:
     optional: true
+
+  fsrs.js@1.2.2: {}
 
   function-bind@1.1.2: {}
 

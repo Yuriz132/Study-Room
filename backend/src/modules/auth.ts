@@ -41,13 +41,20 @@ export interface SavedArticle {
 }
 
 // SRS 间隔复习记录（与前端 lib/reviews.ts 结构一致；JSON 键为字符串）
+/** 复习记录（前端 FSRS 算法字段，后端仅存储透传；字段全部可选以兼容新旧记录） */
 interface ReviewRecord {
-  reps: number
-  ease: number
-  interval: number
-  due: number
-  last: number
+  reps?: number
+  ease?: number
+  interval?: number
+  due?: number
+  last?: number
   grade?: 'good' | 'vague' | 'forget'
+  stability?: number
+  difficulty?: number
+  elapsed_days?: number
+  scheduled_days?: number
+  lapses?: number
+  state?: number
 }
 
 /** 个人笔记（支持文字与图片） */
@@ -294,14 +301,24 @@ const savedArticleSchema = z.object({
   createdAt: z.number(),
 })
 
-const reviewRecordSchema = z.object({
-  reps: z.number().int().nonnegative(),
-  ease: z.number(),
-  interval: z.number().nonnegative(),
-  due: z.number(),
-  last: z.number(),
-  grade: z.enum(['good', 'vague', 'forget']).optional(),
-})
+// 复习记录 schema：前端已升级为 FSRS 算法（新增 stability/difficulty/elapsed_days/
+// scheduled_days/lapses/state 字段）。字段全部可选 + passthrough，兼容新旧两种记录。
+const reviewRecordSchema = z
+  .object({
+    reps: z.number().int().nonnegative().optional(),
+    ease: z.number().optional(),
+    interval: z.number().nonnegative().optional(),
+    due: z.number().optional(),
+    last: z.number().optional(),
+    grade: z.enum(['good', 'vague', 'forget']).optional(),
+    stability: z.number().optional(),
+    difficulty: z.number().optional(),
+    elapsed_days: z.number().optional(),
+    scheduled_days: z.number().optional(),
+    lapses: z.number().optional(),
+    state: z.number().optional(),
+  })
+  .passthrough()
 
 const noteSchema = z.object({
   id: z.string(),

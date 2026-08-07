@@ -56,6 +56,7 @@ export default function ImmersiveLearn() {
   const [recog, setRecog] = useState<Record<number, number>>(() => readRecog());
   const [direction, setDirection] = useState<1 | -1>(1);
   const [flipReason, setFlipReason] = useState<FlipReason>(null);
+  const [confirmAction, setConfirmAction] = useState<"know" | "mastered" | null>(null);
   const [phase, setPhase] = useState<Phase>("learn");
   const [results, setResults] = useState<Record<number, WordResult>>({});
 
@@ -162,8 +163,36 @@ export default function ImmersiveLearn() {
   }, []);
 
   /* ---- 自评操作 ---- */
+  const goNext = useCallback((step: 1 | -1 = 1) => {
+    if (!sessionIds.length) return;
+    setDirection(step);
+    setFlipped(false);
+    setFlipReason(null);
+    setConfirmAction(null);
+    setIdx((i) => {
+      let next = i + step;
+      let guard = 0;
+      while (guard < sessionIds.length && done.has(sessionIds[next])) {
+        next += step;
+        if (next < 0) next = sessionIds.length - 1;
+        if (next >= sessionIds.length) next = 0;
+        guard++;
+      }
+      return next;
+    });
+  }, [sessionIds, done]);
+
+  // 「认识」：先翻面看释义，确认后才 +1 计数（防无反馈直接跳走）
   const handleKnow = useCallback(() => {
     if (!currentId || !w) return;
+    setFlipReason(null);
+    setConfirmAction("know");
+    setFlipped(true);
+  }, [currentId, w]);
+
+  const confirmKnow = useCallback(() => {
+    if (!currentId || !w) return;
+    setConfirmAction(null);
     const n = (recog[currentId] || 0) + 1;
     const nextRecog = { ...recog, [currentId]: n };
     setRecog(nextRecog); writeRecog(nextRecog);
@@ -175,10 +204,19 @@ export default function ImmersiveLearn() {
     } else {
       setTimeout(() => goNext(1), 200);
     }
-  }, [currentId, recog, w, bump, markKnown]);
+  }, [currentId, recog, w, bump, markKnown, goNext]);
 
+  // 「掌握」：先翻面看释义，确认后才标记掌握
   const handleMastered = useCallback(() => {
     if (!currentId) return;
+    setFlipReason(null);
+    setConfirmAction("mastered");
+    setFlipped(true);
+  }, [currentId]);
+
+  const confirmMastered = useCallback(() => {
+    if (!currentId) return;
+    setConfirmAction(null);
     setResults((prev) => ({
       ...prev,
       [currentId]: { ...(prev[currentId] || { unknown: 0, fuzzy: 0, know: 0, mastered: false }), mastered: true },
@@ -186,7 +224,7 @@ export default function ImmersiveLearn() {
     markKnown(currentId);
     playSound(1568, "sine", 0.2);
     setTimeout(() => goNext(1), 300);
-  }, [currentId, markKnown]);
+  }, [currentId, markKnown, goNext]);
 
   const handleUnknown = useCallback(() => {
     if (!currentId) return;
@@ -206,24 +244,6 @@ export default function ImmersiveLearn() {
     setFlipped(true);
   }, [currentId, bump]);
 
-  const goNext = useCallback((step: 1 | -1 = 1) => {
-    if (!sessionIds.length) return;
-    setDirection(step);
-    setFlipped(false);
-    setFlipReason(null);
-    setIdx((i) => {
-      let next = i + step;
-      let guard = 0;
-      while (guard < sessionIds.length && done.has(sessionIds[next])) {
-        next += step;
-        if (next < 0) next = sessionIds.length - 1;
-        if (next >= sessionIds.length) next = 0;
-        guard++;
-      }
-      return next;
-    });
-  }, [sessionIds, done]);
-
   // 看完答案点「下一页」：把当前词标记为本轮已处理，再进入下一词
   const advanceSeen = useCallback(() => {
     if (currentId != null) setDone((prev) => new Set(prev).add(currentId));
@@ -232,6 +252,7 @@ export default function ImmersiveLearn() {
 
   const handleFlip = useCallback(() => {
     setFlipReason(null);
+    setConfirmAction(null);
     setFlipped((v) => !v);
   }, []);
   const handleStar = useCallback(() => { if (currentId) toggleStar(currentId); }, [currentId, toggleStar]);
@@ -241,6 +262,7 @@ export default function ImmersiveLearn() {
     setIdx(0);
     setFlipped(false);
     setFlipReason(null);
+    setConfirmAction(null);
     setDone(new Set());
     setResults({});
     setRecog(readRecog());
@@ -512,6 +534,36 @@ export default function ImmersiveLearn() {
               <span className="text-lg">👍</span>
               <span className="text-[11px] font-semibold">{count >= NEED_RECOG - 1 ? "认识" : `${count}/${NEED_RECOG}`}</span>
             </button>
+          </div>
+        ) : confirmAction === "know" ? (
+          /* 认识确认：释义已展示在卡片背面，确认后才计数 */
+          <div className="space-y-2">
+            <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-center text-sm text-primary">
+              确认认识这个词？<span className="font-medium">{w?.meaning}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => { setConfirmAction(null); setFlipped(false); }} className="rounded-2xl border g-border g-panel py-3.5 text-base text-foreground transition-all active:scale-95">
+                取消
+              </button>
+              <button onClick={confirmKnow} data-testid="confirm-know-btn" className="rounded-2xl bg-primary py-3.5 text-base font-semibold text-primary-foreground shadow-lg transition-all active:scale-95">
+                确认认识
+              </button>
+            </div>
+          </div>
+        ) : confirmAction === "mastered" ? (
+          /* 掌握确认：确认后才标记为已掌握 */
+          <div className="space-y-2">
+            <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-center text-sm text-primary">
+              确认掌握这个词？<span className="font-medium">{w?.meaning}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => { setConfirmAction(null); setFlipped(false); }} className="rounded-2xl border g-border g-panel py-3.5 text-base text-foreground transition-all active:scale-95">
+                取消
+              </button>
+              <button onClick={confirmMastered} data-testid="confirm-mastered-btn" className="rounded-2xl bg-primary py-3.5 text-base font-semibold text-primary-foreground shadow-lg transition-all active:scale-95">
+                确认掌握
+              </button>
+            </div>
           </div>
         ) : flipReason === "unknown" ? (
           /* 不认识：看答案，只有「下一页」 */

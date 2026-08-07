@@ -54,7 +54,10 @@ export default function Flashcards() {
 
   const [quizOptions, setQuizOptions] = useState<QuizOption[]>([]);
   const [quizAnswered, setQuizAnswered] = useState(false);
+  const [selectedOpt, setSelectedOpt] = useState<QuizOption | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [confirmGrade, setConfirmGrade] = useState<"good" | "vague" | "forget" | null>(null);
+  const choiceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const w = session.current;
 
@@ -65,21 +68,37 @@ export default function Flashcards() {
       const opts = buildQuizOptions({ id: w.id, word: w.word, meaning: w.meaning }, words.map((x) => ({ id: x.id, word: x.word, meaning: x.meaning })));
       setQuizOptions(opts);
       setQuizAnswered(false);
+      setSelectedOpt(null);
     } else {
       setQuizOptions([]);
     }
     setConfirming(false);
+    setConfirmGrade(null);
+    // 换题时清理自动跳题计时器
+    if (choiceTimer.current) { clearTimeout(choiceTimer.current); choiceTimer.current = null; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [w?.id, session.phase, session.state.stage]);
 
+  // 组件卸载时清理计时器
+  useEffect(() => {
+    return () => {
+      if (choiceTimer.current) { clearTimeout(choiceTimer.current); choiceTimer.current = null; }
+    };
+  }, []);
+
   const onChoice = (opt: QuizOption) => {
     if (quizAnswered || !w) return;
+    setSelectedOpt(opt);
     setQuizAnswered(true);
     // 选择题答错：自动归集到错词本
     if (!opt.correct) {
       addWrong({ word: w.word, phonetic: w.phonetic, meaning: w.meaning });
     }
-    session.onChoice(opt.correct);
+    // 先展示对错与释义，稍后自动进入下一题
+    if (choiceTimer.current) clearTimeout(choiceTimer.current);
+    choiceTimer.current = setTimeout(() => {
+      session.onChoice(opt.correct);
+    }, 1400);
   };
 
   const onGrade = (grade: "good" | "vague" | "forget") => {
@@ -153,23 +172,38 @@ export default function Flashcards() {
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {quizOptions.map((opt, i) => {
+              const isSel = selectedOpt != null && selectedOpt.id === opt.id;
+              const isCorrect = opt.correct;
+              const cls = quizAnswered
+                ? isSel && isCorrect
+                  ? "border-success bg-success/15 text-success"
+                  : isSel && !isCorrect
+                    ? "border-destructive bg-destructive/15 text-destructive"
+                    : isCorrect
+                      ? "border-success bg-success/15 text-success"
+                      : "g-border text-foreground opacity-50"
+                : "g-border text-foreground hover:g-panel";
               return (
                 <button
                   key={i}
                   onClick={() => onChoice(opt)}
                   disabled={quizAnswered}
-                  className={
-                    "rounded-xl border px-4 py-4 text-left text-sm transition active:scale-98 " +
-                    (quizAnswered && opt.correct ? "border-success bg-success/15 text-success " :
-                     "g-border text-foreground hover:g-panel")
-                  }
+                  className={"rounded-xl border px-4 py-4 text-left text-sm transition active:scale-98 " + cls}
                 >
                   {opt.meaning}
+                  {quizAnswered && isSel && <span className="mt-1 block text-xs font-medium">{isCorrect ? "✓ 回答正确" : "✗ 回答错误"}</span>}
                 </button>
               );
             })}
           </div>
-          {quizAnswered && <p className="text-center text-xs text-muted-foreground">已记录，自动进入下一题…</p>}
+          {quizAnswered && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-center">
+              <p className="text-sm font-semibold text-primary">{w.word} · {w.meaning}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {selectedOpt?.correct ? "回答正确，即将进入下一题…" : "回答错误，请记住这个释义，即将进入下一题…"}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -191,14 +225,20 @@ export default function Flashcards() {
               <div className="mb-2 text-center text-sm text-foreground">
                 释义：<span className="font-semibold text-primary">{w.meaning}</span>
               </div>
-              <p className="mb-3 text-center text-xs text-muted-foreground">已标记「认识」，确认进入下一个词？</p>
+              <p className="mb-3 text-center text-xs text-muted-foreground">
+                {confirmGrade === "good"
+                  ? "已标记「认识」，确认进入下一个词？"
+                  : confirmGrade === "vague"
+                    ? "已标记「模糊」，确认进入下一个词？"
+                    : "已标记「不认识」，确认进入下一个词？"}
+              </p>
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setConfirming(false); onGrade("good"); }}
+                  onClick={() => { const g = confirmGrade; setConfirming(false); setConfirmGrade(null); if (g) onGrade(g); }}
                   className="flex-1 rounded-xl bg-success px-4 py-2 text-sm text-white"
-                >下一个词</button>
+                >确认</button>
                 <button
-                  onClick={() => { setConfirming(false); session.resetWord(w.id); onGrade("forget"); }}
+                  onClick={() => { setConfirming(false); setConfirmGrade(null); session.resetWord(w.id); onGrade("forget"); }}
                   className="flex-1 rounded-xl border g-border px-4 py-2 text-sm text-destructive"
                 >记错了（清除进度）</button>
               </div>
@@ -206,15 +246,15 @@ export default function Flashcards() {
           ) : (
             <div className="flex items-center justify-between gap-2">
               <button
-                onClick={() => setConfirming(true)}
+                onClick={() => { setConfirmGrade("good"); setConfirming(true); }}
                 className="flex-1 rounded-xl bg-success px-4 py-3 text-sm text-white"
               >认识</button>
               <button
-                onClick={() => onGrade("vague")}
+                onClick={() => { setConfirmGrade("vague"); setConfirming(true); }}
                 className="flex-1 rounded-xl border g-border px-4 py-3 text-sm text-warning"
               >模糊</button>
               <button
-                onClick={() => onGrade("forget")}
+                onClick={() => { setConfirmGrade("forget"); setConfirming(true); }}
                 className="flex-1 rounded-xl border g-border px-4 py-3 text-sm text-destructive"
               >不认识</button>
             </div>
