@@ -314,7 +314,7 @@ export default function More() {
           </div>
         )}
 
-        <p className="mt-8 text-center text-xs text-muted-foreground/60">B501班学习室</p>
+        <p className="mt-8 text-center text-xs text-muted-foreground/60">Study Room</p>
       </div>
     </div>
   );

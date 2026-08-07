@@ -10,7 +10,7 @@ import axios, { AxiosError } from 'axios';
  *   VITE_API_BASE_URL（绝对地址）覆盖上述前缀。
  */
 const envBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
-const webBase = window.location.pathname.startsWith('/vs') ? '/vs/api' : '/api';
+const webBase = window.location.pathname.startsWith('/sr') ? '/sr/api' : window.location.pathname.startsWith('/vs') ? '/vs/api' : '/api';
 export const API_BASE: string = envBase && envBase.length ? envBase : webBase;
 
 export const apiClient = axios.create({

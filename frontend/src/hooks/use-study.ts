@@ -24,7 +24,7 @@ export function useStudy(token: string | null, friend: string) {
 
   useEffect(() => {
     if (!token) return
-    const socketPath = window.location.pathname.startsWith('/vs') ? '/vs/socket.io' : '/socket.io'
+    const socketPath = window.location.pathname.startsWith('/sr') ? '/sr/socket.io' : window.location.pathname.startsWith('/vs') ? '/vs/socket.io' : '/socket.io'
     const sock = io({ path: socketPath, auth: { token }, transports: ['websocket', 'polling'] })
     socketRef.current = sock
     sock.on('study:error', (d: { message?: string }) => setErr(d.message || '出错了'))

@@ -153,7 +153,7 @@ export default function Starred() {
             <QuickCard icon={<Library className="h-4 w-4 text-amber-400" />} title="自建词库" onClick={() => navigate("/custom")} />
             <QuickCard icon={<BookOpen className="h-4 w-4 text-sky-400" />} title="公共笔记" onClick={() => navigate("/public-notes")} />
             <QuickCard icon={<Sparkles className="h-4 w-4 text-fuchsia-400" />} title="AI 助手" onClick={() => setShowAI((v) => !v)} />
-            <QuickCard icon={<FileQuestion className="h-4 w-4 text-rose-400" />} title="考题预测" subtitle="测试中不稳定" onClick={() => window.open("https://sanzizyf.asia/vs/text", "_blank", "noopener,noreferrer")} />
+            <QuickCard icon={<FileQuestion className="h-4 w-4 text-rose-400" />} title="考题预测" subtitle="测试中不稳定" onClick={() => window.open(window.location.origin + (window.location.pathname.startsWith('/sr') ? '/sr/text' : '/vs/text'), "_blank", "noopener,noreferrer")} />
           </div>
         )}
         {q.trim() && <p className="text-xs text-muted-foreground">找到 {results.length} 个结果</p>}

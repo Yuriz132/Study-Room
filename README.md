@@ -404,9 +404,11 @@ Certbot 会自动把 80 跳转 443 并配置证书。证书每 90 天自动续�
 4. 进入「AI 英语文章」生成一篇短文（验证对话模型）。
 5. 打开两个浏览器分别登录两个账号，进入「单词 PK」确认能实时匹配对战（验证 Socket.IO）。
 
-### 子路径部署（如挂在 `/vs`）
+### 子路径部署（如挂在 `/vs`、`/sr`）
 
-前端 `VITE_API_BASE_URL=/vs/api`，Nginx 改为：
+前端已内置子路径自动识别：`/vs` 与 `/sr` 两种前缀下，API 前缀（`/vs/api`、`/sr/api`）、SPA 路由 `basename`、Socket.IO 路径、静态资源前缀均会自动切换，**通常无需设置 `VITE_API_BASE_URL`**（仅安卓 APK 等无代理场景才用构建期注入的绝对地址覆盖）。
+
+Nginx 只需为子路径加 3 类 location（SPA 根 + API 反代 + Socket.IO 升级），例如挂在 `/vs`：
 
 ```nginx
 location /vs/ {
@@ -416,6 +418,13 @@ location /vs/ {
 location /vs/api/  { proxy_pass http://127.0.0.1:3000/api/; /* + 通用 proxy 头 */ }
 location /vs/socket.io/ { proxy_pass http://127.0.0.1:3000/socket.io/; /* + Upgrade 头 */ }
 ```
+
+本仓库附带一份**可直接复用的 `/sr` 预览部署样例**（线上同款）：
+
+- [`deploy/nginx-sr.conf`](./deploy/nginx-sr.conf) —— 加入 443 server 块的 5 个 `/sr` location（含 assets 长缓存、SPA 回退、API 与 Socket.IO 反代到 3100）。
+- [`deploy/study-room-backend.service`](./deploy/study-room-backend.service) —— systemd 单元，后端监听 `3100`，与 `/vs` 实例（3000）互不干扰。
+
+> 演示站（`/sr`）出于开源预览目的**关闭了极验人机验证**：只要不配置 `VITE_GEETEST_CAPTCHA_ID` 与后端 `GEETEST_CAPTCHA_ID`，注册即免验证码；同时所有用户/社交数据已清空，仅保留词库。
 
 ### 故障排查
 

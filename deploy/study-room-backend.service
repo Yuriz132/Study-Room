@@ -1,0 +1,16 @@
+[Unit]
+Description=Study Room Backend
+After=network.target
+
+[Service]
+Type=simple
+User=henan-vocab
+WorkingDirectory=/opt/study-room/backend
+ExecStart=/usr/bin/node /opt/study-room/backend/dist/index.js
+Restart=on-failure
+RestartSec=3
+Environment=NODE_ENV=production
+Environment=PORT=3100
+
+[Install]
+WantedBy=multi-user.target

@@ -6,7 +6,7 @@ let shared: Socket | null = null
 let sharedToken: string | null = null
 
 export function getPresenceSocket(token: string | null): Socket {
-  const socketPath = window.location.pathname.startsWith('/vs') ? '/vs/socket.io' : '/socket.io'
+  const socketPath = window.location.pathname.startsWith('/sr') ? '/sr/socket.io' : window.location.pathname.startsWith('/vs') ? '/vs/socket.io' : '/socket.io'
   if (shared && sharedToken === token && shared.connected) return shared
   if (shared) {
     try { shared.disconnect() } catch { /* noop */ }

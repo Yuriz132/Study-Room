@@ -26,7 +26,7 @@ export function useDm(friend: string) {
   useEffect(() => {
     const token = localStorage.getItem('auth_token')
     if (!token || !friend) return
-    const socketPath = window.location.pathname.startsWith('/vs') ? '/vs/socket.io' : '/socket.io'
+    const socketPath = window.location.pathname.startsWith('/sr') ? '/sr/socket.io' : window.location.pathname.startsWith('/vs') ? '/vs/socket.io' : '/socket.io'
     const socket: Socket = io({ path: socketPath, auth: { token }, transports: ['websocket', 'polling'] })
     socketRef.current = socket
 

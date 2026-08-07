@@ -170,7 +170,7 @@ function seedRocketClass(): boolean {
   groupsCache.push({
     id: 'rocket',
     name: '火箭班',
-    description: 'B501班学习室 · 火箭班公开群（早读打卡 · 冲刺专升本）',
+    description: 'Study Room · 火箭班公开群（早读打卡 · 冲刺专升本）',
     isPublic: true,
     owner: '',
     createdAt: now,

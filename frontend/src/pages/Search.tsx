@@ -9,7 +9,7 @@ import {
   type Phase,
 } from "@/lib/study-phases";
 
-const AUDIO_PATH = `${window.location.pathname.startsWith("/vs") ? "/vs" : ""}/audio/2_merged_converted.mp3`;
+const AUDIO_PATH = `${window.location.pathname.startsWith("/sr") ? "/sr" : window.location.pathname.startsWith("/vs") ? "/vs" : ""}/audio/2_merged_converted.mp3`;
 const NAP_SECS = 26 * 60; // 26分钟
 const RING_R = 85;
 const CIRCUMFERENCE = 2 * Math.PI * RING_R;

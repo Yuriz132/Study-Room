@@ -42,7 +42,7 @@ export function useChat() {
     const token = localStorage.getItem(TOKEN_KEY)
     if (!token) return
 
-    const socketPath = window.location.pathname.startsWith('/vs') ? '/vs/socket.io' : '/socket.io'
+    const socketPath = window.location.pathname.startsWith('/sr') ? '/sr/socket.io' : window.location.pathname.startsWith('/vs') ? '/vs/socket.io' : '/socket.io'
     const socket: Socket = io({
       path: socketPath,
       auth: { token },

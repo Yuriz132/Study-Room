@@ -124,7 +124,7 @@ export default function Login() {
     <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-4 py-10">
       <ExplodeIn initialScale={0.75}>
         <div className="w-full rounded-3xl border g-border g-panel p-8 text-center backdrop-blur-xl">
-          <img src={`${window.location.pathname.startsWith("/vs") ? "/vs" : ""}/logo.png?v=2`} alt="升本词汇" className="mx-auto h-20 w-20 rounded-2xl object-contain shadow-lg" />
+          <img src={`${window.location.pathname.startsWith("/sr") ? "/sr" : window.location.pathname.startsWith("/vs") ? "/vs" : ""}/logo.png?v=2`} alt="升本词汇" className="mx-auto h-20 w-20 rounded-2xl object-contain shadow-lg" />
           <h1 className="mt-3 bg-gradient-to-r from-primary to-sky-300 bg-clip-text font-bold text-transparent" style={{ fontSize: "2rem" }}>
             升本词汇
           </h1>

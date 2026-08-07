@@ -221,7 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       /* 云端不可用时直接用本地 */
     }
     // 跳转回应用首页：兼容 /vs 子路径部署与 IP 根路径部署
-    window.location.href = window.location.pathname.startsWith('/vs') ? '/vs/' : '/'
+    window.location.href = window.location.pathname.startsWith('/sr') ? '/sr/' : window.location.pathname.startsWith('/vs') ? '/vs/' : '/'
   }
 
   const register = async (username: string, password: string, extra?: { hp?: string; email?: string; phone?: string; geetest?: { lot_number: string; captcha_output: string; pass_token: string; gen_time: string } }) => {
@@ -251,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
     // 跳转回应用首页：兼容 /vs 子路径部署与 IP 根路径部署
-    window.location.href = window.location.pathname.startsWith('/vs') ? '/vs/' : '/'
+    window.location.href = window.location.pathname.startsWith('/sr') ? '/sr/' : window.location.pathname.startsWith('/vs') ? '/vs/' : '/'
   }
 
   /** 本地游客模式：不依赖后端，直接以本机用户名进入 */
@@ -264,7 +264,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(false)
     setUser(clean)
     // 跳转回应用首页：兼容 /vs 子路径部署与 IP 根路径部署
-    window.location.href = window.location.pathname.startsWith('/vs') ? '/vs/' : '/'
+    window.location.href = window.location.pathname.startsWith('/sr') ? '/sr/' : window.location.pathname.startsWith('/vs') ? '/vs/' : '/'
   }
 
   const logout = () => {

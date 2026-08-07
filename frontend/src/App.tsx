@@ -159,7 +159,7 @@ function App() {
   return (
     <AuthProvider>
       <SettingsProvider>
-        <BrowserRouter basename={window.location.pathname.startsWith('/vs') ? '/vs' : ''}>
+        <BrowserRouter basename={window.location.pathname.startsWith('/sr') ? '/sr' : window.location.pathname.startsWith('/vs') ? '/vs' : ''}>
           <PresenceProvider>
           <FriendIndicatorProvider>
           <div className="min-h-screen">
