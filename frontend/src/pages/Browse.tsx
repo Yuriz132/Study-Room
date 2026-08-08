@@ -1,14 +1,16 @@
 import { useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { GraduationCap, Play } from "lucide-react";
+import { GraduationCap, Play, BookMarked } from "lucide-react";
 import { allWords, partStructure, getWordsByList } from "@/lib/words-data";
 import { useStarred } from "@/hooks/use-storage";
+import { useCustomWords } from "@/hooks/use-custom-words";
 import { speakWord } from "@/lib/speak";
 
 export default function Browse() {
   const { part, list } = useParams();
   const navigate = useNavigate();
   const { starred, toggle } = useStarred();
+  const { lists: customLists } = useCustomWords();
 
   // 1) 单词列表页 /browse/:part/:list
   const listWords = useMemo(() => (part && list ? getWordsByList(part, list) : []), [part, list]);
@@ -110,6 +112,38 @@ export default function Browse() {
           </Link>
         ))}
       </div>
+
+      {/* ── 自定义词库预览 ── */}
+      {customLists.length > 0 && (
+        <>
+          <h2 className="pt-4 text-lg font-bold text-foreground flex items-center gap-2">
+            <BookMarked className="h-5 w-5 text-primary" /> 自定义词库
+          </h2>
+          <div className="space-y-2">
+            {customLists.map((l) => (
+              <div
+                key={l.id}
+                className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/[0.03] px-4 py-3 transition active:scale-95"
+              >
+                <Link
+                  to={`/custom/${l.id}`}
+                  className="flex min-w-0 flex-1 items-center justify-between"
+                >
+                  <span className="font-medium text-foreground">{l.name}</span>
+                  <span className="text-xs text-muted-foreground">{l.words.length} 词 ›</span>
+                </Link>
+                <button
+                  onClick={() => navigate(`/flashcards/custom/${l.id}`)}
+                  className="flex shrink-0 items-center gap-1 rounded-lg bg-primary/15 px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/25"
+                  title={`开始学习 ${l.name}`}
+                >
+                  <GraduationCap className="h-3.5 w-3.5" /> 学习
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

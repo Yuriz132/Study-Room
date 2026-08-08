@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Plus, BookMarked, Pencil, Trash2, Play, Volume2, X, ChevronRight, FileText, Check, UploadCloud, Sparkles } from 'lucide-react';
+import { Plus, BookMarked, Pencil, Trash2, Play, Volume2, X, ChevronRight, FileText, Check, UploadCloud, Sparkles, FileUp } from 'lucide-react';
 import { useCustomWords } from '@/hooks/use-custom-words';
 import type { CustomWord } from '@/types/word';
 import { speakWord } from '@/lib/speak';
@@ -236,6 +236,33 @@ function ListDetail({ list, onBack, onRename, onDelete, onAddWord, onAddWords, o
   const [importText, setImportText] = useState('');
   const parsed = importText.trim() ? parseBulk(importText) : { words: [], invalid: [] };
 
+  // ── txt 文件导入 ──
+  const txtFileRef = useRef<HTMLInputElement>(null);
+  const [txtFileName, setTxtFileName] = useState('');
+  const [txtParsed, setTxtParsed] = useState<{ words: CustomWord[]; invalid: string[] } | null>(null);
+
+  const handleTxtFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setTxtFileName(file.name);
+    try {
+      const text = await file.text();
+      const result = parseBulk(text);
+      setTxtParsed(result);
+    } catch {
+      setTxtParsed({ words: [], invalid: [] });
+    }
+    // 重置 input 以便同一文件可重复选择
+    if (txtFileRef.current) txtFileRef.current.value = '';
+  }, []);
+
+  const doTxtImport = useCallback(() => {
+    if (!txtParsed || txtParsed.words.length === 0) return;
+    onAddWords(txtParsed.words);
+    setTxtFileName('');
+    setTxtParsed(null);
+  }, [txtParsed, onAddWords]);
+
   const submit = () => {
     if (!word.trim()) return;
     const w: CustomWord = { word: word.trim(), phonetic: phonetic.trim() || undefined, meaning: meaning.trim() };
@@ -339,6 +366,20 @@ function ListDetail({ list, onBack, onRename, onDelete, onAddWord, onAddWords, o
         >
           <FileText className="h-3.5 w-3.5" /> {showImport ? '收起批量导入' : '批量导入（一键粘贴多词）'}
         </button>
+        {/* 隐藏的 txt 文件选择器 */}
+        <input
+          ref={txtFileRef}
+          type="file"
+          accept=".txt,text/plain"
+          className="hidden"
+          onChange={handleTxtFileChange}
+        />
+        <button
+          onClick={() => txtFileRef.current?.click()}
+          className="mt-2 flex items-center gap-1.5 text-xs text-primary transition-all hover:text-primary/80"
+        >
+          <FileUp className="h-3.5 w-3.5" /> 从 txt 文件导入
+        </button>
       </div>
 
       {/* AI 智能导入（上传图片/拍照），支持 autoOpen 触发文件选择器 */}
@@ -377,6 +418,40 @@ teacher | /ˈtiːtʃə/ | 老师`}
             className="liquid-glass-accent liquid-glass liquid-glass-shine mt-3 flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-primary transition-all active:scale-95 disabled:cursor-not-allowed disabled:text-muted-foreground/40"
           >
             <Check className="h-4 w-4" /> 导入 {parsed.words.length} 个单词
+          </button>
+        </div>
+      )}
+
+      {/* txt 文件导入结果 */}
+      {txtParsed && (
+        <div className="liquid-glass mb-6 rounded-2xl p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              📄 文件：<span className="font-medium text-foreground">{txtFileName}</span>
+            </p>
+            <button
+              onClick={() => { setTxtFileName(''); setTxtParsed(null); }}
+              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <X className="inline h-3 w-3" /> 清除
+            </button>
+          </div>
+          <p className="mb-2 text-xs text-muted-foreground">
+            检测到 <span className="text-primary font-semibold">{txtParsed.words.length}</span> 个单词
+            {txtParsed.invalid.length > 0 && <span className="text-destructive">（{txtParsed.invalid.length} 行无法识别）</span>}
+          </p>
+          {txtParsed.words.length > 0 && (
+            <pre className="max-h-32 overflow-auto rounded-lg g-panel px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+{txtParsed.words.slice(0, 20).map((w) => w.word).join('\n')}
+{txtParsed.words.length > 20 ? `\n... 等 ${txtParsed.words.length} 个单词` : ''}
+            </pre>
+          )}
+          <button
+            onClick={doTxtImport}
+            disabled={txtParsed.words.length === 0}
+            className="liquid-glass-accent liquid-glass liquid-glass-shine mt-3 flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-primary transition-all active:scale-95 disabled:cursor-not-allowed disabled:text-muted-foreground/40"
+          >
+            <Check className="h-4 w-4" /> 确认导入 {txtParsed.words.length} 个单词
           </button>
         </div>
       )}
