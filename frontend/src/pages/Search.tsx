@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { Moon, Brain } from "lucide-react";
 import {
@@ -25,6 +25,13 @@ export default function SearchPage() {
   const [napEnd, setNapEnd] = useState<number>(0); // Date.now() 毫秒
   const [wakeUp, setWakeUp] = useState<NapType | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // 音频播放进度（用于可拖动进度环）
+  const [audioCur, setAudioCur] = useState(0);
+  const [audioDur, setAudioDur] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const ringWrapRef = useRef<HTMLDivElement | null>(null);
+  const draggingRef = useRef(false);
 
   // 助眠音频循环设置：'once' 播放一次 | 'loop' 循环播放（默认：播放一次）
   const [loopMode, setLoopMode] = useState<'once' | 'loop'>(() => {
@@ -98,12 +105,19 @@ export default function SearchPage() {
   const startNap = useCallback(
     (type: NapType) => {
       if (napEnd) return;
-      if (!audioRef.current) {
-        audioRef.current = new Audio(AUDIO_PATH);
+      let a = audioRef.current;
+      if (!a) {
+        a = new Audio(AUDIO_PATH);
+        const audio = a; // 非空 const，供闭包捕获，避免 TS 报 'a' is possibly 'null'
+        audio.addEventListener("timeupdate", () => setAudioCur(audio.currentTime));
+        audio.addEventListener("loadedmetadata", () => setAudioDur(audio.duration || 0));
+        audio.addEventListener("ended", () => setAudioCur(audio.duration || 0));
+        audioRef.current = a;
       }
-      audioRef.current.loop = loopMode === 'loop';
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {});
+      a.loop = loopMode === 'loop';
+      a.currentTime = 0;
+      setAudioCur(0);
+      a.play().catch(() => {});
       setNapType(type);
       setNapEnd(Date.now() + NAP_SECS * 1000);
       setWakeUp(null);
@@ -117,13 +131,58 @@ export default function SearchPage() {
     setNapType(null);
     audioRef.current?.pause();
     if (audioRef.current) audioRef.current.currentTime = 0;
+    setAudioCur(0);
   }, []);
 
   /* 关闭唤醒弹窗 */
   const dismissWakeUp = useCallback(() => setWakeUp(null), []);
 
-  /* 进度环 strokeDashoffset */
-  const ringDashoffset = CIRCUMFERENCE * (1 - napProgress);
+  /* ── 拖动进度环跳转音频 ── */
+  const seekFromEvent = useCallback((e: ReactPointerEvent) => {
+    const el = ringWrapRef.current;
+    const a = audioRef.current;
+    if (!el || !a || !audioDur) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    // 圆环从 12 点方向顺时针，ratio = (θ + π/2) / 2π，归一到 [0,1)
+    let theta = Math.atan2(dy, dx);
+    let ratio = (theta + Math.PI / 2) / (2 * Math.PI);
+    ratio = ((ratio % 1) + 1) % 1;
+    const dur = a.duration || audioDur;
+    a.currentTime = ratio * dur;
+    setAudioCur(ratio * dur);
+  }, [audioDur]);
+
+  const onRingPointerDown = useCallback((e: ReactPointerEvent) => {
+    if (!audioDur) return;
+    draggingRef.current = true;
+    setDragging(true);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    seekFromEvent(e);
+  }, [audioDur, seekFromEvent]);
+
+  const onRingPointerMove = useCallback((e: ReactPointerEvent) => {
+    if (!draggingRef.current) return;
+    seekFromEvent(e);
+  }, [seekFromEvent]);
+
+  const onRingPointerUp = useCallback((e: ReactPointerEvent) => {
+    draggingRef.current = false;
+    setDragging(false);
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+  }, []);
+
+  /* 进度环：音频可播放后用音频进度（可拖动跳转），否则回退到小睡进度 */
+  const ringProgress = audioDur > 0 ? Math.min(1, Math.max(0, audioCur / audioDur)) : napProgress;
+  const ringDashoffset = CIRCUMFERENCE * (1 - ringProgress);
+
+  /* 进度手柄坐标（与顺时针从顶部一致的几何） */
+  const handleAngle = ringProgress * 2 * Math.PI - Math.PI / 2;
+  const hx = 105 + RING_R * Math.cos(handleAngle);
+  const hy = 105 + RING_R * Math.sin(handleAngle);
 
   /* 当前阶段是否为晚间（夜间睡眠或准备期）—— 显示睡前提醒 */
   const isNight = phase.label === "夜间睡眠";
@@ -251,32 +310,58 @@ export default function SearchPage() {
       {napEnd > 0 &&
         createPortal(
           <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/92 backdrop-blur-md">
-          {/* 进度环 SVG */}
-          <svg width="210" height="210" viewBox="0 0 210 210" className="-mt-8">
-            {/* 背景轨 */}
-            <circle
-              cx="105"
-              cy="105"
-              r={RING_R}
-              fill="none"
-              stroke="rgba(255,255,255,0.08)"
-              strokeWidth="5"
-            />
-            {/* 进度弧 */}
-            <circle
-              cx="105"
-              cy="105"
-              r={RING_R}
-              fill="none"
-              stroke={napType === "midday" ? "#38bdf8" : "#a78bfa"}
-              strokeWidth="5"
-              strokeLinecap="round"
-              strokeDasharray={CIRCUMFERENCE}
-              strokeDashoffset={ringDashoffset}
-              transform="rotate(-90 105 105)"
-              style={{ transition: "stroke-dashoffset 0.4s linear" }}
-            />
-          </svg>
+          {/* 可拖动进度环 */}
+          <div
+            ref={ringWrapRef}
+            className="relative"
+            style={{
+              width: 210,
+              height: 210,
+              cursor: audioDur > 0 ? (dragging ? "grabbing" : "grab") : "default",
+              touchAction: "none",
+            }}
+            onPointerDown={onRingPointerDown}
+            onPointerMove={onRingPointerMove}
+            onPointerUp={onRingPointerUp}
+            onPointerCancel={onRingPointerUp}
+          >
+            <svg width="210" height="210" viewBox="0 0 210 210" className="-mt-8">
+              {/* 背景轨 */}
+              <circle
+                cx="105"
+                cy="105"
+                r={RING_R}
+                fill="none"
+                stroke="rgba(255,255,255,0.08)"
+                strokeWidth="5"
+              />
+              {/* 进度弧 */}
+              <circle
+                cx="105"
+                cy="105"
+                r={RING_R}
+                fill="none"
+                stroke={napType === "midday" ? "#38bdf8" : "#a78bfa"}
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeDasharray={CIRCUMFERENCE}
+                strokeDashoffset={ringDashoffset}
+                transform="rotate(-90 105 105)"
+                style={{ transition: dragging ? "none" : "stroke-dashoffset 0.4s linear" }}
+              />
+              {/* 可拖动手柄 */}
+              {audioDur > 0 && (
+                <circle
+                  cx={hx}
+                  cy={hy}
+                  r="7"
+                  fill="#ffffff"
+                  stroke={napType === "midday" ? "#38bdf8" : "#a78bfa"}
+                  strokeWidth="3"
+                />
+              )}
+            </svg>
+          </div>
           <div className="-mt-4 text-center">
             <div className="text-3xl font-bold font-mono tabular-nums text-white">
               {fmtClock(napRemaining)}
@@ -284,7 +369,13 @@ export default function SearchPage() {
             <div className="mt-1 text-sm text-white/60">
               {napType === "midday" ? "💤 午睡中" : "⚡ 傍晚小睡中"}
             </div>
-            <div className="mt-0.5 text-[11px] text-white/30">音频播放中 · 保持安静</div>
+            {audioDur > 0 ? (
+              <div className="mt-0.5 text-[11px] text-white/40">
+                ♪ {fmtClock(Math.floor(audioCur))} / {fmtClock(Math.floor(audioDur))} · 拖动圆环跳转
+              </div>
+            ) : (
+              <div className="mt-0.5 text-[11px] text-white/30">音频播放中 · 保持安静</div>
+            )}
           </div>
           <button
             onClick={dismissNap}
