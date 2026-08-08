@@ -11,8 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { aiGenerateArticle } from '@/lib/ai';
 import { allWords } from '@/lib/words-data';
-import { useKnown, useStarred, useSavedArticles } from '@/hooks/use-storage';
-import type { SavedArticle } from '@/lib/authApi';
+import { useKnown, useStarred } from '@/hooks/use-storage';
+import { useNotes } from '@/hooks/use-notes';
 
 interface Props {
   open: boolean;
@@ -25,18 +25,11 @@ const TARGETS = [
   { value: 200, label: '长文 ~200词', desc: '综合运用' },
 ] as const
 
-/** 生成稳定的文章 id（优先用 crypto.randomUUID） */
-function makeArticleId(): string {
-  const c: any = (globalThis as any).crypto
-  if (c && typeof c.randomUUID === 'function') return c.randomUUID()
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-}
-
 /** AI 英语文章生成：基于已学（已掌握/已收藏）单词生成可读文章 */
 export function ArticleGenerator({ open, onOpenChange }: Props) {
   const { known } = useKnown()
   const { starred } = useStarred()
-  const { add: saveArticle } = useSavedArticles()
+  const { addNote } = useNotes()
   const navigate = useNavigate()
   const [target, setTarget] = useState<number>(120)
   const [theme, setTheme] = useState('')
@@ -79,18 +72,9 @@ export function ArticleGenerator({ open, onOpenChange }: Props) {
         title: theme.trim() || undefined,
       })
       setResult(out)
-      // 自动存入「我的收藏」（本地 + 已登录时同步云端）
-      const article: SavedArticle = {
-        id: makeArticleId(),
-        title: out.title || 'Untitled',
-        content: out.content,
-        usedWords: out.usedWords || [],
-        target,
-        theme: theme.trim() || '无主题',
-        createdAt: Date.now(),
-      }
-      saveArticle(article)
-      setSavedId(article.id)
+      // 自动存入「收藏 → 笔记」标签页（本地 + 已登录时同步云端）
+      const noteId = addNote(out.title || 'Untitled', out.content)
+      setSavedId(noteId)
     } catch (e: any) {
       setErr(e?.response?.data?.message || e?.message || '生成失败，请重试')
     } finally {
@@ -165,7 +149,7 @@ export function ArticleGenerator({ open, onOpenChange }: Props) {
                   <h3 className="text-base font-bold text-foreground">{result.title}</h3>
                   {savedId && (
                     <span className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
-                      <Check className="h-3 w-3" /> 已存入收藏
+                      <Check className="h-3 w-3" /> 已存入笔记
                     </span>
                   )}
                 </div>
@@ -194,12 +178,12 @@ export function ArticleGenerator({ open, onOpenChange }: Props) {
                 <Button
                   onClick={() => {
                     onOpenChange(false)
-                    navigate('/starred?tab=favorites')
+                    navigate('/starred?tab=notes')
                   }}
                   variant="ghost"
                   className="text-primary"
                 >
-                  <FileText className="h-4 w-4" /> 我的收藏
+                  <FileText className="h-4 w-4" /> 我的笔记
                 </Button>
                 <Button onClick={() => onOpenChange(false)} variant="ghost">
                   <X className="h-4 w-4" /> 关闭

@@ -407,7 +407,7 @@ export function Flashcard({ words, onStar, onKnown, onReview, isStarred, onClose
               )}
               {aiDetail.similarWords?.length > 0 && (
                 <div>
-                  <div className="text-xs font-medium text-primary">形近词（河南专升本常考）</div>
+                  <div className="text-xs font-medium text-primary">形近词（河南英语学习室常考）</div>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {aiDetail.similarWords.map((s, i) => (
                       <span key={i} className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs text-primary">

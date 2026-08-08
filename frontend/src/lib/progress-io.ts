@@ -51,7 +51,7 @@ export function exportProgress(): void {
   const a = document.createElement('a');
   const date = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `升本词汇-学习进度-${date}.json`;
+  a.download = `英语学习室-学习进度-${date}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

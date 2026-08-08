@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { allWords, searchWords } from "@/lib/words-data";
 import { useStarred, useKnown } from "@/hooks/use-storage";
 import { useWrongWords } from "@/hooks/use-wrong-words";
@@ -30,7 +30,10 @@ const CHECKIN_MEMBERS = [
 ];
 
 export default function Starred() {
-  const [tab, setTab] = useState<Tab>("starred");
+  const [searchParams] = useSearchParams();
+  const VALID_TABS: Tab[] = ["starred", "known", "wrong", "notes", "wrongbook"];
+  const urlTab = searchParams.get("tab") as Tab | null;
+  const [tab, setTab] = useState<Tab>(urlTab && VALID_TABS.includes(urlTab) ? urlTab : "starred");
   const { starred, toggle } = useStarred();
   const { known, toggle: toggleKnown } = useKnown();
   const { wrong, removeWrong, clearWrong } = useWrongWords();

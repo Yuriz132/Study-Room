@@ -11,7 +11,7 @@ export default function ArticleGen() {
       <div className="rounded-2xl border g-border bg-card p-6 text-center">
         <BookOpen className="mx-auto mb-2 h-7 w-7 text-primary" />
         <p className="text-sm text-muted-foreground">
-          基于你已掌握 / 已收藏的单词，AI 写一篇适合专升本水平的英语短文，并自动存入收藏。
+          基于你已掌握 / 已收藏的单词，AI 写一篇适合英语学习室水平的英语短文，并自动存入收藏。
         </p>
         <button
           onClick={() => setOpen(true)}

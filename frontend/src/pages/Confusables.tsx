@@ -53,7 +53,7 @@ export default function Confusables() {
         <h1 className="mb-1 font-bold text-foreground" style={{ fontSize: 'var(--font-size-headline)' }}>
           近义词 / 形近词辨析
         </h1>
-        <p className="mb-6 text-muted-foreground">专升本常考的易混词，点击卡片查看区别与例句</p>
+        <p className="mb-6 text-muted-foreground">英语学习室常考的易混词，点击卡片查看区别与例句</p>
       </FlyIn>
       <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
         {data.map((item, i) => (

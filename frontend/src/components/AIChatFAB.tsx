@@ -17,7 +17,7 @@ function saveMsgs(list: ChatMsg[]) {
   try { localStorage.setItem(AI_CHAT_KEY, JSON.stringify(list.slice(-20))); } catch {}
 }
 
-const SYS = `你是「升本词汇」的 AI 学习助手，专注于河南专升本英语词汇。回答简洁、有温度，200 字以内。涉及单词时给出中文释义+例句+形近词。`;
+const SYS = `你是「英语学习室」的 AI 学习助手，专注于河南英语学习室英语词汇。回答简洁、有温度，200 字以内。涉及单词时给出中文释义+例句+形近词。`;
 
 export function AIChatFAB() {
   const [open, setOpen] = useState(false);

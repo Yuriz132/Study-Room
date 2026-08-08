@@ -9,10 +9,10 @@ interface ChatMsg {
 const STORAGE_KEY = "lv:mimo-study-chat";
 const MAX_HISTORY = 50;
 
-const SYS_PROMPT = `你是「升本词汇」的 AI 学习助手，专注河南专升本英语词汇与语法。要求：
+const SYS_PROMPT = `你是「英语学习室」的 AI 学习助手，专注河南英语学习室英语词汇与语法。要求：
 1. 回答简洁、有温度，尽量 200 字以内；
 2. 涉及单词时给出：中文释义 + 1 个例句 + 形近/近义辨析；
-3. 可被问学习方法、语法、单词记忆、专升本备考建议；
+3. 可被问学习方法、语法、单词记忆、英语学习室备考建议；
 4. 不知道就说不知道，不要编造。`;
 
 function loadMsgs(): ChatMsg[] {
