@@ -490,3 +490,12 @@ location /vs/socket.io/ { proxy_pass http://127.0.0.1:3000/socket.io/; /* + Upgr
 ## 📄 许可证
 
 [MIT](./LICENSE) © 2026 Study Room
+
+
+## 部署须知（低配 ECS 必读）
+
+> 低配服务器（单核 / ≤2GB 内存）部署前端时，**禁止**运行 `tsc -b` 全量类型检查 —— 曾因此导致 CPU/内存打满、服务器卡死重启。
+
+- 部署构建：`pnpm build`（已改为仅 `vite build`，约 10 秒完成，无资源压力）
+- 完整类型检查：`pnpm build:full`（含 `tsc -b`），仅在高配机器或 CI 中执行，不要在本机跑
+- 推荐做法：类型检查放到 CI（GitHub Actions 等）高配 runner 执行，ECS 只负责 `vite build` + 部署
