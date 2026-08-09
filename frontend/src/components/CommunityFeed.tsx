@@ -28,9 +28,11 @@ export function CommunityFeed() {
       .then((data) => {
         if (!cancelled) setList(data);
       })
-      .catch((e) => { if (import.meta.env.DEV) console.error('[community] 加载失败', e))
+      .catch((e) => {
+        if (import.meta.env.DEV) console.error('[community] 加载失败', e);
+      })
       .finally(() => {
-        if (!cancelled) setLoading(false) };
+                if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
