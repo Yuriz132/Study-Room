@@ -52,29 +52,30 @@ function AvatarLink({ name, avatar, size, className }: { name: string; avatar?: 
 
 /* ---- 自动识别文本中的链接并渲染为可点击蓝字 ---- */
 function AutoLinkText({ text }: { text: string }) {
-  const segments = text.split(/(https?:\/\/[^\s]+)/g)
+  // 仅将 ASCII 可见字符（含常见 URL 符号）识别为链接；遇到中文 / 全角标点 / 空白即截断，
+  // 并剔除结尾可能多余的 ASCII 句末标点（. , ; : ! ?），避免把“。，纯公益”之类吞进链接。
+  const segments = text.split(/(https?:\/\/[^\s，。、；：！？（）【】「」『』《》…—\u4e00-\u9fff]+)/g)
   return (
     <>
-      {segments.map((seg, i) =>
-        /^https?:\/\//.test(seg) ? (
+      {segments.map((seg, i) => {
+        if (!/^https?:\/\//.test(seg)) return <span key={i}>{seg}</span>
+        const url = seg.replace(/[.,;:!?]+$/, '')
+        return (
           <a
             key={i}
-            href={seg}
+            href={url}
             target="_blank"
             rel="noopener noreferrer"
             className="break-all text-blue-600 hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
-            {seg}
+            {url}
           </a>
-        ) : (
-          <span key={i}>{seg}</span>
         )
-      )}
+      })}
     </>
   )
 }
-
 /* ---- 社区 5 大板块（网格视图入口）---- */
 const FORUM_MODULES = [
   { key: 'all', label: '全部帖子', icon: LayoutGrid, desc: '社区里的所有帖子' },
