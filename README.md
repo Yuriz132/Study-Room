@@ -1,3 +1,13 @@
+## 📎 相关资源与部署教程
+
+- 白嫖monkeycode理论永久服务器教程：[docx 下载](https://ncstatic-file.clewm.net/rsrc/2026/0809/10/785d5018effb6e5e4dbbc25f4bdcaef7.docx)
+- 白嫖阿里云服务器300学生优惠免费至少半年：[docx 下载](https://ncstatic-file.clewm.net/rsrc/2026/0809/10/4d72a60d69ad91eef2fe2bea28086b79.docx)
+
+- 项目预览地址：https://sanzizyf.asia/sr/
+- 项目开源地址：https://github.com/Yuriz132/Study-Room
+
+---
+
 # Study Room · 升本词汇学习平台
 
 > 一个面向**专升本英语词汇**学习的现代化 Web 应用：集词汇学习、AI 智能辅助、社交社区、实时单词 PK、自习室与学习统计于一体。液态玻璃（Liquid Glass）质感 UI，移动端优先，支持深色模式。
