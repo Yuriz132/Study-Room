@@ -86,11 +86,15 @@ function playYoudaoAudio(text: string, accent: Accent = 'us', onEnd?: () => void
     const audio = new Audio(url);
     if (onEnd) audio.onended = () => onEnd();
     audio.play().catch((err) => {
-      console.warn('[speak] 有道音频播放失败：', err);
+      if (import.meta.env.DEV) {
+        console.warn('[speak] 有道音频播放失败：', err);
+      }
       onEnd?.();
     });
   } catch (err) {
-    console.warn('[speak] 有道音频创建失败：', err);
+    if (import.meta.env.DEV) {
+      console.warn('[speak] 有道音频创建失败：', err);
+    }
     onEnd?.();
   }
 }
@@ -127,13 +131,17 @@ export function speakWord(text: string, accent?: Accent, opts?: { rate?: number;
     const guard = window.setTimeout(() => {
       if (!fellBack) {
         fellBack = true;
-        console.warn('[speak] 英文 speechSynthesis 未在限定时间内发声，切换有道音频');
+        if (import.meta.env.DEV) {
+          console.warn('[speak] 英文 speechSynthesis 未在限定时间内发声，切换有道音频');
+        }
         playYoudaoAudio(text, ac, opts?.onEnd);
       }
     }, 800);
     utter.onstart = () => {
       clearTimeout(guard);
-      console.log('[speak] 开始英文朗读（speechSynthesis）：', text);
+      if (import.meta.env.DEV) {
+        console.log('[speak] 开始英文朗读（speechSynthesis）：', text);
+      }
     };
     utter.onend = () => {
       clearTimeout(guard);
@@ -143,7 +151,9 @@ export function speakWord(text: string, accent?: Accent, opts?: { rate?: number;
       clearTimeout(guard);
       if (!fellBack) {
         fellBack = true;
-        console.warn('[speak] 英文 speechSynthesis 出错：', e.error || e, '→ 切换有道音频');
+        if (import.meta.env.DEV) {
+          console.warn('[speak] 英文 speechSynthesis 出错：', e.error || e, '→ 切换有道音频');
+        }
         playYoudaoAudio(text, ac, opts?.onEnd);
       }
     };
@@ -152,11 +162,15 @@ export function speakWord(text: string, accent?: Accent, opts?: { rate?: number;
       window.speechSynthesis.speak(utter);
     } catch (err) {
       clearTimeout(guard);
-      console.warn('[speak] 英文 speechSynthesis 抛出异常：', err, '→ 切换有道音频');
+      if (import.meta.env.DEV) {
+        console.warn('[speak] 英文 speechSynthesis 抛出异常：', err, '→ 切换有道音频');
+      }
       playYoudaoAudio(text, ac, opts?.onEnd);
     }
   } else {
-    console.log('[speak] 无英文语音包，使用有道音频：', text);
+    if (import.meta.env.DEV) {
+      console.log('[speak] 无英文语音包，使用有道音频：', text);
+    }
     playYoudaoAudio(text, ac, opts?.onEnd);
   }
 }
@@ -194,9 +208,13 @@ function buildChineseUtterance(text: string): SpeechSynthesisUtterance {
     allVoices.find((v) => /cmn|chinese|mandarin/i.test(v.name));
   if (voice) {
     utter.voice = voice;
-    console.log('[speak] 选中中文语音：', voice.name, voice.lang);
+    if (import.meta.env.DEV) {
+      console.log('[speak] 选中中文语音：', voice.name, voice.lang);
+    }
   } else {
-    console.log('[speak] 未找到专用中文语音，使用默认');
+    if (import.meta.env.DEV) {
+      console.log('[speak] 未找到专用中文语音，使用默认');
+    }
   }
   return utter;
 }
@@ -223,12 +241,16 @@ function trySpeakChinese(text: string, timeoutMs = 1200): Promise<boolean> {
     utter.onstart = () => {
       started = true;
       clearTimeout(guard);
-      console.log('[speak] 中文朗读开始：', text);
+      if (import.meta.env.DEV) {
+        console.log('[speak] 中文朗读开始：', text);
+      }
       resolve(true);
     };
     utter.onerror = (e) => {
       clearTimeout(guard);
-      console.warn('[speak] 中文 speechSynthesis 出错：', e.error || e);
+      if (import.meta.env.DEV) {
+        console.warn('[speak] 中文 speechSynthesis 出错：', e.error || e);
+      }
       resolve(false);
     };
     utter.onend = () => {
@@ -243,13 +265,17 @@ function trySpeakChinese(text: string, timeoutMs = 1200): Promise<boolean> {
           window.speechSynthesis.speak(utter);
         } catch (err) {
           clearTimeout(guard);
-          console.warn('[speak] 中文 speechSynthesis.speak 抛出异常：', err);
+          if (import.meta.env.DEV) {
+            console.warn('[speak] 中文 speechSynthesis.speak 抛出异常：', err);
+          }
           resolve(false);
         }
       }, 50);
     } catch (err) {
       clearTimeout(guard);
-      console.warn('[speak] 中文 speechSynthesis 初始化异常：', err);
+      if (import.meta.env.DEV) {
+        console.warn('[speak] 中文 speechSynthesis 初始化异常：', err);
+      }
       resolve(false);
     }
   });
@@ -264,17 +290,23 @@ export async function speakChinese(rawText: string) {
   if (typeof window === 'undefined') return;
   const text = cleanChineseText(rawText);
   if (!text) {
-    console.warn('[speak] 中文释义为空，无法朗读');
+    if (import.meta.env.DEV) {
+      console.warn('[speak] 中文释义为空，无法朗读');
+    }
     return;
   }
 
-  console.log('[speak] 准备朗读中文：', rawText, '→ 清理后：', text);
+  if (import.meta.env.DEV) {
+    console.log('[speak] 准备朗读中文：', rawText, '→ 清理后：', text);
+  }
 
   // 仅尝试浏览器内置语音，不做云端兜底
   await loadVoices();
   const ok = await trySpeakChinese(text, 1500);
   if (ok) return;
-  console.log('[speak] 浏览器中文语音不可用，已跳过云端兜底（中文默写即可）');
+  if (import.meta.env.DEV) {
+    console.log('[speak] 浏览器中文语音不可用，已跳过云端兜底（中文默写即可）');
+  }
 }
 
 /** 是否有可用的中文语音引擎 */

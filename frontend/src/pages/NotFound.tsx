@@ -26,7 +26,9 @@ export function NotFoundFallback() {
 const NotFound = () => {
   const location = useLocation();
   useEffect(() => {
-    console.error("404 Error:", location.pathname);
+    if (import.meta.env.DEV) {
+      console.error("404 Error:", location.pathname);
+    }
   }, [location.pathname]);
   return <NotFoundFallback />;
 };

@@ -44,7 +44,7 @@ export default function ReviewReminder({ dueCount, onReview }: ReviewReminderPro
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 p-4 backdrop-blur-sm sm:items-center">
+    <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 p-4 pb-[calc(env(safe-area-inset-bottom)+7rem)] backdrop-blur-sm sm:items-center">
       <div className="liquid-glass w-full max-w-sm rounded-3xl border g-border p-6 text-center shadow-2xl">
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-sky-400/15 text-3xl">
           🔔

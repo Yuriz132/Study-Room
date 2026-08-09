@@ -81,7 +81,9 @@ export function WordComments({
       const list = await fetchComments(wordId);
       setComments(list);
     } catch (e) {
-      console.error('[comments] 读取失败', e);
+      if (import.meta.env.DEV) {
+        console.error('[comments] 读取失败', e);
+      }
       setError('评论加载失败，请稍后重试');
     } finally {
       setLoading(false);
@@ -161,7 +163,9 @@ export function WordComments({
         setComments((prev) => prev.map((c) => (c._id === optimistic._id ? { ...saved } : c)));
         return true;
       } catch (e) {
-        console.error('[comments] 发表失败', e);
+        if (import.meta.env.DEV) {
+          console.error('[comments] 发表失败', e);
+        }
         setComments((prev) =>
           prev.map((c) => (c._id === optimistic._id ? { ...c, pending: false, failed: true } : c))
         );

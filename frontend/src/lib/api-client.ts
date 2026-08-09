@@ -55,12 +55,16 @@ apiClient.interceptors.response.use(
 
     // Handle 403 Forbidden
     if (error.response?.status === 403) {
-      console.error('Access forbidden');
+      if (import.meta.env.DEV) {
+        console.error('Access forbidden');
+      }
     }
 
     // Handle 500 Internal Server Error
     if (error.response?.status === 500) {
-      console.error('Server error occurred');
+      if (import.meta.env.DEV) {
+        console.error('Server error occurred');
+      }
     }
 
     return Promise.reject(error);

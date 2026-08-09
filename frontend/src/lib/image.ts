@@ -15,7 +15,9 @@ async function convertHeicToJpeg(file: File): Promise<File | null> {
     const name = file.name.replace(/\.(heic|heif)$/i, '.jpg');
     return new File([blob], name, { type: 'image/jpeg' });
   } catch (e) {
-    console.warn('[compressImage] HEIC 转换失败，将尝试原图上传', e);
+    if (import.meta.env.DEV) {
+      console.warn('[compressImage] HEIC 转换失败，将尝试原图上传', e);
+    }
     return null;
   }
 }
@@ -38,11 +40,15 @@ export async function compressImageResilient(file: File, maxDim = 1280, quality 
   try {
     return await compressImage(file, maxDim, quality);
   } catch (e) {
-    console.warn('[compressImage] 首次压缩失败，重试一次', e);
+    if (import.meta.env.DEV) {
+      console.warn('[compressImage] 首次压缩失败，重试一次', e);
+    }
     try {
       return await compressImage(file, maxDim, quality);
     } catch (e2) {
-      console.warn('[compressImage] 压缩失败，回退原图 dataURL', e2);
+      if (import.meta.env.DEV) {
+        console.warn('[compressImage] 压缩失败，回退原图 dataURL', e2);
+      }
       return await fileToDataUrl(file);
     }
   }

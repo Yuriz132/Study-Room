@@ -70,7 +70,9 @@ export default function Login() {
           const result = captchaObj.getValidate();
           if (result) geetestResult.current = result;
         }).onError((err: any) => {
-          console.error('Geetest error:', err?.msg || err);
+          if (import.meta.env.DEV) {
+            console.error('Geetest error:', err?.msg || err);
+          }
           setError('验证码加载失败，请刷新页面重试');
         });
       });
