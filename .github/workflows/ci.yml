@@ -1,0 +1,43 @@
+name: CI — Frontend 类型检查与构建
+
+# 方案 A：把 tsc -b 全量类型检查挪到 GitHub 高配 runner，
+# 低配 ECS 只负责 `pnpm build`（= vite build）+ 部署，避免 CPU/内存打满卡死。
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: tsc -b 类型检查 + vite 构建（GitHub 高配 runner，不在低配 ECS）
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: 安装依赖（冻结 lockfile）
+        run: pnpm install --frozen-lockfile
+
+      - name: 类型检查 + 生产构建 (pnpm build:full = tsc -b && vite build)
+        run: pnpm build:full
